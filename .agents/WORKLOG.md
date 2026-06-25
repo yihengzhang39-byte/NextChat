@@ -3,6 +3,32 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-06-26
+
+### Completed
+
+- **ERNIE 5.0 v2 API integration** (commit `260d9aed`):
+  - Added `BAIDU_V2_BASE_URL` (`https://qianfan.baidubce.com`) and `ernie-5.0` model.
+  - Added `isBaiduV2Key()` helper to detect `bce-v3/` Bearer token keys.
+  - Server handler (`app/api/baidu.ts`): v2 uses `Authorization: Bearer` header + v2 endpoint; v1 OAuth2 flow preserved for backward compatibility.
+  - Client platform (`app/client/platforms/baidu.ts`): v2 Bearer auth in desktop mode + OpenAI-compatible SSE response parsing (`choices[0].delta.content`). v1 `result` parsing preserved.
+  - Default provider: `ServiceProvider.OpenAI` → `ServiceProvider.Baidu`.
+  - `isValidBaidu()`: only requires `baiduApiKey` for v2 keys (no Secret Key needed).
+  - Created `.env` with `BAIDU_API_KEY` and `DEFAULT_MODEL=ernie-5.0@Baidu`.
+  - Disabled auth (`CODE=` empty) for zero-config out-of-box chat.
+  - Verified: non-streaming returns `{"choices":[{"message":{"content":"..."}}]}`; streaming SSE works with `reasoning_content` (深度思考).
+
+### Decisions
+
+- **Confirmed**: Baidu's new `bce-v3/ALTAK-...` format is the complete credential (Bearer Token). No separate Secret Key exists. This is an API format change, not a missing credential.
+- **Backward compatibility**: v1 (OAuth2 `?access_token=`) and v2 (Bearer header) both supported. Detection based on key prefix.
+- **Auth disabled for dev**: `CODE=` empty — no password needed to chat. Matches "zero config" product direction.
+
+### Reason
+
+- Complete the immediate integration testing goal from 2026-06-25.
+- Enable chat verification before switching to Iflytek as final provider.
+
 ## 2026-06-25
 
 ### Completed
@@ -27,7 +53,7 @@ use concrete dates.
   plan is to simplify the UI to a single-model interface (like DeepSeek web
   client) — no model/provider switching.
 - **Temporary model for testing**: Since Iflytek's latest API key is not yet
-  available, we will use Baidu ERNIE 5.0 (`ernie5.0`) as a temporary model to
+  available, we will use Baidu ERNIE 5.0 (`ernie-5.0`) as a temporary model to
   verify the chat interface. Baidu API Key obtained; Secret Key pending
   (expected 2026-06-26).
 - **Server-side config approach**: Model credentials will be configured via
