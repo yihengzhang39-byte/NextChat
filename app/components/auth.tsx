@@ -1,189 +1,147 @@
 import styles from "./auth.module.scss";
 import { IconButton } from "./button";
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Path, SAAS_CHAT_URL } from "../constant";
-import { useAccessStore } from "../store";
-import Locale from "../locales";
-import Delete from "../icons/close.svg";
-import Arrow from "../icons/arrow.svg";
-import Logo from "../icons/logo.svg";
-import { useMobileScreen } from "@/app/utils";
+import { Path } from "../constant";
 import BotIcon from "../icons/bot.svg";
-import { getClientConfig } from "../config/client";
-import { PasswordInput } from "./ui-lib";
-import LeftIcon from "@/app/icons/left.svg";
-import { safeLocalStorage } from "@/app/utils";
-import {
-  trackSettingsPageGuideToCPaymentClick,
-  trackAuthorizationPageButtonToCPaymentClick,
-} from "../utils/auth-settings-events";
+import Locale from "../locales";
 import clsx from "clsx";
-
-const storage = safeLocalStorage();
 
 export function AuthPage() {
   const navigate = useNavigate();
-  const accessStore = useAccessStore();
-  const goHome = () => navigate(Path.Home);
-  const goChat = () => navigate(Path.Chat);
-  const goSaas = () => {
-    trackAuthorizationPageButtonToCPaymentClick();
-    window.location.href = SAAS_CHAT_URL;
-  };
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState("");
+  const [mockCode, setMockCode] = useState("");
 
-  const resetAccessCode = () => {
-    accessStore.update((access) => {
-      access.openaiApiKey = "";
-      access.accessCode = "";
-    });
-  }; // Reset access code to empty string
+  const canSendCode = useMemo(() => /^1[3-9]\d{9}$/.test(phone), [phone]);
+  const canLogin = canSendCode && /^\d{6}$/.test(code) && acceptedTerms;
 
-  useEffect(() => {
-    if (getClientConfig()?.isApp) {
-      navigate(Path.Settings);
+  async function sendCode() {
+    setSending(true);
+    setMessage("");
+    setMockCode("");
+    try {
+      const res = await fetch("/api/auth/sms/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.message ?? "验证码发送失败");
+      }
+      setMockCode(data.mockCode ?? "");
+      setMessage(data.mocked ? `开发验证码：${data.mockCode}` : "验证码已发送");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "验证码发送失败");
+    } finally {
+      setSending(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+
+  async function login() {
+    setLoading(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/auth/sms/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code, acceptedTerms }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.message ?? "登录失败");
+      }
+      navigate(Path.Chat);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "登录失败");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <div className={styles["auth-page"]}>
-      <TopBanner></TopBanner>
-      <div className={styles["auth-header"]}>
-        <IconButton
-          icon={<LeftIcon />}
-          text={Locale.Auth.Return}
-          onClick={() => navigate(Path.Home)}
-        ></IconButton>
-      </div>
+    <div className={clsx(styles["auth-page"], styles["phone-auth-page"])}>
       <div className={clsx("no-dark", styles["auth-logo"])}>
         <BotIcon />
       </div>
 
-      <div className={styles["auth-title"]}>{Locale.Auth.Title}</div>
-      <div className={styles["auth-tips"]}>{Locale.Auth.Tips}</div>
+      <div className={styles["auth-title"]}>讯飞 Web Chat</div>
+      <div className={styles["auth-tips"]}>
+        使用手机号验证码登录，开始安全、合规的智能问答服务。
+      </div>
 
-      <PasswordInput
-        style={{ marginTop: "3vh", marginBottom: "3vh" }}
-        aria={Locale.Settings.ShowPassword}
-        aria-label={Locale.Auth.Input}
-        value={accessStore.accessCode}
-        type="text"
-        placeholder={Locale.Auth.Input}
-        onChange={(e) => {
-          accessStore.update(
-            (access) => (access.accessCode = e.currentTarget.value),
-          );
-        }}
-      />
+      <div className={styles["phone-auth-card"]}>
+        <label className={styles["phone-auth-field"]}>
+          <span>手机号</span>
+          <input
+            value={phone}
+            inputMode="tel"
+            maxLength={11}
+            placeholder="请输入手机号"
+            onChange={(e) => setPhone(e.currentTarget.value.trim())}
+          />
+        </label>
 
-      {!accessStore.hideUserApiKey ? (
-        <>
-          <div className={styles["auth-tips"]}>{Locale.Auth.SubTips}</div>
-          <PasswordInput
-            style={{ marginTop: "3vh", marginBottom: "3vh" }}
-            aria={Locale.Settings.ShowPassword}
-            aria-label={Locale.Settings.Access.OpenAI.ApiKey.Placeholder}
-            value={accessStore.openaiApiKey}
-            type="text"
-            placeholder={Locale.Settings.Access.OpenAI.ApiKey.Placeholder}
-            onChange={(e) => {
-              accessStore.update(
-                (access) => (access.openaiApiKey = e.currentTarget.value),
-              );
-            }}
+        <label className={styles["phone-auth-field"]}>
+          <span>验证码</span>
+          <div className={styles["phone-auth-code"]}>
+            <input
+              value={code}
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="6 位验证码"
+              onChange={(e) => setCode(e.currentTarget.value.trim())}
+            />
+            <button disabled={!canSendCode || sending} onClick={sendCode}>
+              {sending ? "发送中" : "获取验证码"}
+            </button>
+          </div>
+        </label>
+
+        <label className={styles["phone-auth-policy"]}>
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.currentTarget.checked)}
           />
-          <PasswordInput
-            style={{ marginTop: "3vh", marginBottom: "3vh" }}
-            aria={Locale.Settings.ShowPassword}
-            aria-label={Locale.Settings.Access.Google.ApiKey.Placeholder}
-            value={accessStore.googleApiKey}
-            type="text"
-            placeholder={Locale.Settings.Access.Google.ApiKey.Placeholder}
-            onChange={(e) => {
-              accessStore.update(
-                (access) => (access.googleApiKey = e.currentTarget.value),
-              );
-            }}
-          />
-        </>
-      ) : null}
+          <span>
+            我已阅读并同意
+            <a href="/docs/user-agreement.md" target="_blank">
+              用户协议
+            </a>
+            和
+            <a href="/docs/privacy-policy.md" target="_blank">
+              隐私政策
+            </a>
+          </span>
+        </label>
+
+        {message && <div className={styles["phone-auth-message"]}>{message}</div>}
+        {mockCode && code === "" && (
+          <button
+            className={styles["phone-auth-fill"]}
+            onClick={() => setCode(mockCode)}
+          >
+            填入开发验证码
+          </button>
+        )}
+
+        <IconButton
+          text={loading ? "登录中" : "登录"}
+          type="primary"
+          disabled={!canLogin || loading}
+          onClick={login}
+        />
+      </div>
 
       <div className={styles["auth-actions"]}>
-        <IconButton
-          text={Locale.Auth.Confirm}
-          type="primary"
-          onClick={goChat}
-        />
-        <IconButton
-          text={Locale.Auth.SaasTips}
-          onClick={() => {
-            goSaas();
-          }}
-        />
+        <IconButton text={Locale.Auth.Return} onClick={() => navigate(Path.Home)} />
       </div>
-    </div>
-  );
-}
-
-function TopBanner() {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const isMobile = useMobileScreen();
-  useEffect(() => {
-    // 检查 localStorage 中是否有标记
-    const bannerDismissed = storage.getItem("bannerDismissed");
-    // 如果标记不存在，存储默认值并显示横幅
-    if (!bannerDismissed) {
-      storage.setItem("bannerDismissed", "false");
-      setIsVisible(true); // 显示横幅
-    } else if (bannerDismissed === "true") {
-      // 如果标记为 "true"，则隐藏横幅
-      setIsVisible(false);
-    }
-  }, []);
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-  };
-
-  const handleClose = () => {
-    setIsVisible(false);
-    storage.setItem("bannerDismissed", "true");
-  };
-
-  if (!isVisible) {
-    return null;
-  }
-  return (
-    <div
-      className={styles["top-banner"]}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div className={clsx(styles["top-banner-inner"], "no-dark")}>
-        <Logo className={styles["top-banner-logo"]}></Logo>
-        <span>
-          {Locale.Auth.TopTips}
-          <a
-            href={SAAS_CHAT_URL}
-            rel="stylesheet"
-            onClick={() => {
-              trackSettingsPageGuideToCPaymentClick();
-            }}
-          >
-            {Locale.Settings.Access.SaasStart.ChatNow}
-            <Arrow style={{ marginLeft: "4px" }} />
-          </a>
-        </span>
-      </div>
-      {(isHovered || isMobile) && (
-        <Delete className={styles["top-banner-close"]} onClick={handleClose} />
-      )}
     </div>
   );
 }

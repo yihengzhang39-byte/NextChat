@@ -17,6 +17,9 @@ use concrete dates.
   `iflytek-chat:local`.
 - Built and started the local Docker container.
 - Verified `http://localhost:3000` returns HTTP 200.
+- Started implementation of the Web Chat secondary development plan:
+  PostgreSQL/Prisma schema, SMS login APIs, feedback APIs, product login page,
+  feedback pages, Iflytek default model settings, and deployment notes.
 
 ### Reason
 
@@ -25,5 +28,5 @@ use concrete dates.
 
 ### Next
 
-- Confirm the first feature or customization target.
-- Create a feature branch for implementation work.
+- Verify build, Prisma generation, local PostgreSQL migrations, login flow, and
+  feedback flow.

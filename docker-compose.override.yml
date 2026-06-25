@@ -1,12 +1,46 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: iflytek-chat-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-iflytek_chat}
+      POSTGRES_USER: ${POSTGRES_USER:-iflytek_chat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iflytek_chat_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - iflytek-chat-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iflytek_chat}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   chatgpt-next-web:
     build:
       context: .
       dockerfile: Dockerfile
     image: iflytek-chat:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
+      - SMS_MOCK_CODE=${SMS_MOCK_CODE:-123456}
 
   chatgpt-next-web-proxy:
     build:
       context: .
       dockerfile: Dockerfile
     image: iflytek-chat:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
+      - SMS_MOCK_CODE=${SMS_MOCK_CODE:-123456}
+
+volumes:
+  iflytek-chat-postgres:

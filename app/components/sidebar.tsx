@@ -12,6 +12,7 @@ import MaskIcon from "../icons/mask.svg";
 import McpIcon from "../icons/mcp.svg";
 import DragIcon from "../icons/drag.svg";
 import DiscoveryIcon from "../icons/discovery.svg";
+import ReturnIcon from "../icons/return.svg";
 
 import Locale from "../locales";
 
@@ -34,8 +35,7 @@ import clsx from "clsx";
 import { isMcpEnabled } from "../mcp/actions";
 
 const DISCOVERY = [
-  { name: Locale.Plugin.Name, path: Path.Plugins },
-  { name: "Stable Diffusion", path: Path.Sd },
+  { name: "意见反馈", path: Path.Feedback },
   { name: Locale.SearchChat.Page.Title, path: Path.SearchChat },
 ];
 
@@ -250,22 +250,19 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="NextChat"
-        subTitle="Build your own AI assistant."
+        title="讯飞 Web Chat"
+        subTitle="安全、合规的智能问答服务"
         logo={<ChatGptIcon />}
         shouldNarrow={shouldNarrow}
       >
         <div className={styles["sidebar-header-bar"]}>
           <IconButton
-            icon={<MaskIcon />}
-            text={shouldNarrow ? undefined : Locale.Mask.Name}
+            icon={<AddIcon />}
+            text={shouldNarrow ? undefined : "新建对话"}
             className={styles["sidebar-bar-button"]}
             onClick={() => {
-              if (config.dontShowMaskSplashScreen !== true) {
-                navigate(Path.NewChat, { state: { fromHome: true } });
-              } else {
-                navigate(Path.Masks, { state: { fromHome: true } });
-              }
+              chatStore.newSession();
+              navigate(Path.Chat);
             }}
             shadow
           />
@@ -337,13 +334,15 @@ export function SideBar(props: { className?: string }) {
               </Link>
             </div>
             <div className={styles["sidebar-action"]}>
-              <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-                <IconButton
-                  aria={Locale.Export.MessageFromChatGPT}
-                  icon={<GithubIcon />}
-                  shadow
-                />
-              </a>
+              <IconButton
+                aria="退出登录"
+                icon={<ReturnIcon />}
+                shadow
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  navigate(Path.Auth);
+                }}
+              />
             </div>
           </>
         }
@@ -352,12 +351,8 @@ export function SideBar(props: { className?: string }) {
             icon={<AddIcon />}
             text={shouldNarrow ? undefined : Locale.Home.NewChat}
             onClick={() => {
-              if (config.dontShowMaskSplashScreen) {
-                chatStore.newSession();
-                navigate(Path.Chat);
-              } else {
-                navigate(Path.NewChat);
-              }
+              chatStore.newSession();
+              navigate(Path.Chat);
             }}
             shadow
           />
