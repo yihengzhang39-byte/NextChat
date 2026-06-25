@@ -1,0 +1,12 @@
+services:
+  chatgpt-next-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: iflytek-chat:local
+
+  chatgpt-next-web-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: iflytek-chat:local
