@@ -1,7 +1,12 @@
 "use client";
-import { ApiPath, Baidu, BAIDU_BASE_URL } from "@/app/constant";
+import {
+  ApiPath,
+  Baidu,
+  BAIDU_BASE_URL,
+  BAIDU_V2_BASE_URL,
+} from "@/app/constant";
 import { useAccessStore, useAppConfig, useChatStore } from "@/app/store";
-import { getAccessToken } from "@/app/utils/baidu";
+import { getAccessToken, isBaiduV2Key } from "@/app/utils/baidu";
 
 import {
   ChatOptions,
@@ -56,8 +61,13 @@ export class ErnieApi implements LLMApi {
 
     if (baseUrl.length === 0) {
       const isApp = !!getClientConfig()?.isApp;
-      // do not use proxy for baidubce api
-      baseUrl = isApp ? BAIDU_BASE_URL : ApiPath.Baidu;
+      // use v2 base URL for bce-v3 keys, v1 base URL otherwise
+      const isV2 = isBaiduV2Key(accessStore.baiduApiKey);
+      if (isV2) {
+        baseUrl = isApp ? BAIDU_V2_BASE_URL : ApiPath.Baidu;
+      } else {
+        baseUrl = isApp ? BAIDU_BASE_URL : ApiPath.Baidu;
+      }
     }
 
     if (baseUrl.endsWith("/")) {
@@ -125,11 +135,26 @@ export class ErnieApi implements LLMApi {
     try {
       let chatPath = this.path(Baidu.ChatPath(modelConfig.model));
 
-      // getAccessToken can not run in browser, because cors error
+      const chatPayload: RequestInit = {
+        method: "POST",
+        body: JSON.stringify(requestPayload),
+        signal: controller.signal,
+        headers: getHeaders(),
+      };
+
+      // v2 API: inject Bearer token header (desktop app only; web uses server proxy)
+      // v1 API: get access_token via OAuth2 and append as query param
       if (!!getClientConfig()?.isApp) {
         const accessStore = useAccessStore.getState();
         if (accessStore.useCustomConfig) {
-          if (accessStore.isValidBaidu()) {
+          if (isBaiduV2Key(accessStore.baiduApiKey)) {
+            // v2: Bearer token auth
+            (chatPayload.headers as Record<string, string>)["Authorization"] =
+              `Bearer ${accessStore.baiduApiKey}`;
+          } else if (
+            accessStore.isValidBaidu()
+          ) {
+            // v1: OAuth2 access_token
             const { access_token } = await getAccessToken(
               accessStore.baiduApiKey,
               accessStore.baiduSecretKey,
@@ -140,12 +165,6 @@ export class ErnieApi implements LLMApi {
           }
         }
       }
-      const chatPayload = {
-        method: "POST",
-        body: JSON.stringify(requestPayload),
-        signal: controller.signal,
-        headers: getHeaders(),
-      };
 
       // make a fetch request
       const requestTimeoutId = setTimeout(
@@ -240,7 +259,10 @@ export class ErnieApi implements LLMApi {
             const text = msg.data;
             try {
               const json = JSON.parse(text);
-              const delta = json?.result;
+              // v2 API (OpenAI-compatible): choices[0].delta.content
+              // v1 API (legacy): result
+              const delta =
+                json?.choices?.[0]?.delta?.content ?? json?.result;
               if (delta) {
                 remainText += delta;
               }
@@ -262,7 +284,9 @@ export class ErnieApi implements LLMApi {
         clearTimeout(requestTimeoutId);
 
         const resJson = await res.json();
-        const message = resJson?.result;
+        // v2 API: choices[0].message.content, v1 API: result
+        const message =
+          resJson?.choices?.[0]?.message?.content ?? resJson?.result;
         options.onFinish(message, res);
       }
     } catch (e) {

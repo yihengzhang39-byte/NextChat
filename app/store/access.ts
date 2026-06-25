@@ -7,6 +7,7 @@ import {
   ANTHROPIC_BASE_URL,
   GEMINI_BASE_URL,
   BAIDU_BASE_URL,
+  BAIDU_V2_BASE_URL,
   BYTEDANCE_BASE_URL,
   ALIBABA_BASE_URL,
   TENCENT_BASE_URL,
@@ -25,6 +26,7 @@ import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
 import { getModelProvider } from "../utils/model";
+import { isBaiduV2Key } from "../utils/baidu";
 
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
 
@@ -66,7 +68,7 @@ const DEFAULT_ACCESS_STATE = {
   accessCode: "",
   useCustomConfig: false,
 
-  provider: ServiceProvider.OpenAI,
+  provider: ServiceProvider.Baidu,
 
   // openai
   openaiUrl: DEFAULT_OPENAI_URL,
@@ -189,6 +191,11 @@ export const useAccessStore = createPersistStore(
     },
 
     isValidBaidu() {
+      // v2 (bce-v3): only API key is required
+      if (isBaiduV2Key(get().baiduApiKey)) {
+        return ensure(get(), ["baiduApiKey"]);
+      }
+      // v1: both API key and secret key are required
       return ensure(get(), ["baiduApiKey", "baiduSecretKey"]);
     },
 

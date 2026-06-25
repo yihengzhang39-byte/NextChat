@@ -17,6 +17,7 @@ export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
 
 export const BAIDU_BASE_URL = "https://aip.baidubce.com";
+export const BAIDU_V2_BASE_URL = "https://qianfan.baidubce.com";
 export const BAIDU_OATUH_URL = `${BAIDU_BASE_URL}/oauth/2.0/token`;
 
 export const BYTEDANCE_BASE_URL = "https://ark.cn-beijing.volces.com";
@@ -203,7 +204,13 @@ export const Google = {
 
 export const Baidu = {
   ExampleEndpoint: BAIDU_BASE_URL,
+  V2ExampleEndpoint: BAIDU_V2_BASE_URL,
   ChatPath: (modelName: string) => {
+    // v2 API (OpenAI-compatible) — all v2 models use the same endpoint
+    if (modelName === "ernie-5.0") {
+      return "v2/chat/completions";
+    }
+    // v1 API (legacy per-model endpoints)
     let endpoint = modelName;
     if (modelName === "ernie-4.0-8k") {
       endpoint = "completions_pro";
@@ -586,6 +593,7 @@ const anthropicModels = [
 ];
 
 const baiduModels = [
+  "ernie-5.0",
   "ernie-4.0-turbo-8k",
   "ernie-4.0-8k",
   "ernie-4.0-8k-preview",
