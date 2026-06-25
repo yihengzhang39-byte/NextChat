@@ -7,6 +7,14 @@
 - Local `main` tracks `origin/main`.
 - The original upstream project is retained as `upstream`.
 - Development governance documents have been added under `.agents/`.
+- Web Chat foundation (PostgreSQL/Prisma, SMS login, feedback APIs, login/feedback pages) merged.
+
+**2026-06-25 update:**
+
+- Product direction decided: single-model interface for 讯飞星火, like DeepSeek's web client.
+- Temporary model for testing: Baidu ERNIE 5.0 (`ernie5.0`), API Key obtained, awaiting Secret Key.
+- Pending changes: add ernie5.0 to model list, set Baidu as default provider via `.env`, then verify chat works.
+- After Iflytek API key arrives: switch default provider back to Iflytek, simplify UI (remove model picker).
 
 ## Repository Orientation
 
@@ -60,7 +68,8 @@ http://localhost:3000
 
 ## Next Suggested Steps
 
-- Verify the new phone login and feedback flows against a migrated PostgreSQL
-  database.
-- Replace placeholder agreement and privacy policy content before production.
-- Configure Aliyun SMS and Iflytek credentials in `.env` or server secrets.
+1. Get Baidu Secret Key → write to `.env` → add `ernie5.0` model → `yarn dev` verify chat.
+2. Get Iflytek latest model API key → switch `DEFAULT_MODEL` and provider back to Iflytek.
+3. Simplify UI: remove model picker dropdown and Settings provider selector.
+4. Replace placeholder agreement and privacy policy content before production.
+5. Configure Aliyun SMS credentials in `.env`.
