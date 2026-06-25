@@ -1,10 +1,22 @@
 import webpack from "webpack";
 
-const mode = process.env.BUILD_MODE ?? "standalone";
+const requestedMode = process.env.BUILD_MODE ?? "standalone";
+const mode =
+  process.platform === "win32" && requestedMode === "standalone"
+    ? undefined
+    : requestedMode;
 console.log("[Next] build mode", mode);
 
 const disableChunk = !!process.env.DISABLE_CHUNK || mode === "export";
 console.log("[Next] build with chunk: ", !disableChunk);
+
+const experimental = {
+  forceSwcTransforms: true,
+};
+
+if (process.platform !== "win32") {
+  experimental.outputFileTracingRoot = process.cwd();
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -26,13 +38,11 @@ const nextConfig = {
 
     return config;
   },
-  output: mode,
+  ...(mode ? { output: mode } : {}),
   images: {
     unoptimized: mode === "export",
   },
-  experimental: {
-    forceSwcTransforms: true,
-  },
+  experimental,
 };
 
 const CorsHeaders = [

@@ -27,6 +27,13 @@ yarn test:ci
 yarn build
 ```
 
+Database:
+
+```bash
+yarn prisma:generate
+yarn prisma:migrate
+```
+
 Docker local production-style run:
 
 ```bash
@@ -53,7 +60,7 @@ http://localhost:3000
 
 ## Next Suggested Steps
 
-- Decide the first secondary development goal.
-- Create a feature branch before implementation.
-- Add any project-specific product requirements to this handoff file or a new
-  file under `.agents/`.
+- Verify the new phone login and feedback flows against a migrated PostgreSQL
+  database.
+- Replace placeholder agreement and privacy policy content before production.
+- Configure Aliyun SMS and Iflytek credentials in `.env` or server secrets.

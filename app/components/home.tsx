@@ -21,6 +21,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
@@ -63,6 +64,17 @@ const MaskPage = dynamic(async () => (await import("./mask")).MaskPage, {
 const PluginPage = dynamic(async () => (await import("./plugin")).PluginPage, {
   loading: () => <Loading noLogo />,
 });
+
+const Feedback = dynamic(async () => (await import("./feedback")).Feedback, {
+  loading: () => <Loading noLogo />,
+});
+
+const FeedbackAdmin = dynamic(
+  async () => (await import("./admin-feedback")).FeedbackAdmin,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
 
 const SearchChat = dynamic(
   async () => (await import("./search-chat")).SearchChatPage,
@@ -160,6 +172,7 @@ export function WindowContent(props: { children: React.ReactNode }) {
 function Screen() {
   const config = useAppConfig();
   const location = useLocation();
+  const navigate = useNavigate();
   const isArtifact = location.pathname.includes(Path.Artifacts);
   const isHome = location.pathname === Path.Home;
   const isAuth = location.pathname === Path.Auth;
@@ -173,6 +186,18 @@ function Screen() {
   useEffect(() => {
     loadAsyncGoogleFont();
   }, []);
+
+  useEffect(() => {
+    if (isAuth || location.pathname === Path.FeedbackAdmin) return;
+
+    fetch("/api/auth/me")
+      .then((res) => {
+        if (res.status === 401) {
+          navigate(Path.Auth);
+        }
+      })
+      .catch(() => navigate(Path.Auth));
+  }, [isAuth, location.pathname, navigate]);
 
   if (isArtifact) {
     return (
@@ -198,6 +223,8 @@ function Screen() {
             <Route path={Path.NewChat} element={<NewChat />} />
             <Route path={Path.Masks} element={<MaskPage />} />
             <Route path={Path.Plugins} element={<PluginPage />} />
+            <Route path={Path.Feedback} element={<Feedback />} />
+            <Route path={Path.FeedbackAdmin} element={<FeedbackAdmin />} />
             <Route path={Path.SearchChat} element={<SearchChat />} />
             <Route path={Path.Chat} element={<Chat />} />
             <Route path={Path.Settings} element={<Settings />} />

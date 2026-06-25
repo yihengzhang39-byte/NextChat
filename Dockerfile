@@ -18,6 +18,7 @@ RUN apk update && apk add --no-cache git
 ENV OPENAI_API_KEY=""
 ENV GOOGLE_API_KEY=""
 ENV CODE=""
+ENV DATABASE_URL="postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public"
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -35,6 +36,7 @@ ENV OPENAI_API_KEY=""
 ENV GOOGLE_API_KEY=""
 ENV CODE=""
 ENV ENABLE_MCP=""
+ENV DATABASE_URL=""
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./

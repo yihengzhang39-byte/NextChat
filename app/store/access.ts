@@ -146,8 +146,8 @@ const DEFAULT_ACCESS_STATE = {
   disableGPT4: false,
   disableFastLink: false,
   customModels: "",
-  defaultModel: "",
-  visionModels: "",
+  defaultModel: "4.0Ultra@Iflytek",
+  visionModels: "4.0Ultra",
 
   // tts config
   edgeTTSVoiceName: "zh-CN-YunxiNeural",

@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id             String        @id @default(cuid())
+  phone          String        @unique
+  acceptedTerms  Boolean       @default(false)
+  acceptedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  sessions       UserSession[]
+  smsCodes       SmsCode[]
+  feedbacks      Feedback[]
+}
+
+model SmsCode {
+  id          String    @id @default(cuid())
+  phone       String
+  codeHash    String
+  purpose     String    @default("login")
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  userAgent   String?
+  ip          String?
+  user        User?     @relation(fields: [userId], references: [id])
+  userId      String?
+
+  @@index([phone, purpose, createdAt])
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  userAgent  String?
+  ip         String?
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+
+  @@index([userId, expiresAt])
+}
+
+model Feedback {
+  id          String         @id @default(cuid())
+  type        String
+  content     String
+  contact     String?
+  pageUrl     String?
+  userAgent   String?
+  status      FeedbackStatus @default(OPEN)
+  adminNote   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  user        User?          @relation(fields: [userId], references: [id])
+  userId      String?
+
+  @@index([status, createdAt])
+}
