@@ -139,7 +139,7 @@ export const getServerSideConfig = () => {
   const disableGPT4 = !!process.env.DISABLE_GPT4;
   let customModels = process.env.CUSTOM_MODELS ?? "";
   let defaultModel = process.env.DEFAULT_MODEL ?? "4.0Ultra@Iflytek";
-  let visionModels = process.env.VISION_MODELS ?? "4.0Ultra";
+  let visionModels = process.env.VISION_MODELS ?? "ernie-5.0,4.0Ultra";
 
   if (disableGPT4) {
     if (customModels) customModels += ",";

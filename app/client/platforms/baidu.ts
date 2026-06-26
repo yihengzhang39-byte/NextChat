@@ -23,7 +23,12 @@ import {
 } from "@fortaine/fetch-event-source";
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
-import { getMessageTextContent, getTimeoutMSByModel } from "@/app/utils";
+import {
+  getMessageTextContent,
+  getTimeoutMSByModel,
+  isVisionModel,
+} from "@/app/utils";
+import { preProcessImageContent } from "@/app/utils/chat";
 import { fetch } from "@/app/utils/stream";
 
 export interface OpenAIListModelResponse {
@@ -87,11 +92,21 @@ export class ErnieApi implements LLMApi {
   }
 
   async chat(options: ChatOptions) {
-    const messages = options.messages.map((v) => ({
-      // "error_code": 336006, "error_msg": "the role of message with even index in the messages must be user or function",
-      role: v.role === "system" ? "user" : v.role,
-      content: getMessageTextContent(v),
-    }));
+    // Vision models (e.g. ernie-5.0 via the v2 OpenAI-compatible API) accept
+    // multimodal content; send images as image_url parts. Other models stay
+    // text-only — the legacy v1 ERNIE API does not understand image_url.
+    const visionModel = isVisionModel(options.config.model);
+    const messages: RequestPayload["messages"] = [];
+    for (const v of options.messages) {
+      const content = visionModel
+        ? await preProcessImageContent(v.content)
+        : getMessageTextContent(v);
+      messages.push({
+        // "error_code": 336006, "error_msg": "the role of message with even index in the messages must be user or function",
+        role: v.role === "system" ? "user" : v.role,
+        content,
+      });
+    }
 
     // "error_code": 336006, "error_msg": "the length of messages must be an odd number",
     if (messages.length % 2 === 0) {

@@ -149,7 +149,7 @@ const DEFAULT_ACCESS_STATE = {
   disableFastLink: false,
   customModels: "",
   defaultModel: "4.0Ultra@Iflytek",
-  visionModels: "4.0Ultra",
+  visionModels: "ernie-5.0,4.0Ultra",
 
   // tts config
   edgeTTSVoiceName: "zh-CN-YunxiNeural",

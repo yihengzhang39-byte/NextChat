@@ -3,6 +3,24 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-06-26 (evening) — ERNIE 5.0 image upload (multimodal)
+
+### Completed
+
+- **Enabled image upload for ERNIE 5.0.** Two issues fixed:
+  1. `ernie-5.0` matched no vision regex and was absent from `VISION_MODELS`,
+     so `isVisionModel()` was false → no upload button. Added `ernie-5.0` to the
+     `VISION_MODELS` default in `app/config/server.ts` and `app/store/access.ts`,
+     plus `.env` / `.env.template`.
+  2. `app/client/platforms/baidu.ts` built message content with
+     `getMessageTextContent(v)` only — images were silently dropped. Now vision
+     models use `preProcessImageContent(v.content)` to send OpenAI-style
+     `image_url` parts (qianfan v2 compatible). Non-vision models stay text-only
+     (legacy v1 ERNIE does not accept `image_url`).
+- Verified end-to-end: `/api/config` exposes `visionModels: ernie-5.0,4.0Ultra`;
+  a multimodal `POST /api/baidu/v2/chat/completions` with an inline base64 image
+  returns a color answer (image is received and processed by the model).
+
 ## 2026-06-26 (afternoon) — Local Docker full-stack brought up
 
 ### Completed
