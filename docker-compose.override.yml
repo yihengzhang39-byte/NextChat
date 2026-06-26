@@ -16,14 +16,28 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    profiles: [ "no-proxy", "proxy" ]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: iflytek-chat-migrate:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
+    command: yarn prisma:migrate
+    restart: "no"
   chatgpt-next-web:
     build:
       context: .
       dockerfile: Dockerfile
     image: iflytek-chat:local
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
@@ -43,8 +57,8 @@ services:
       dockerfile: Dockerfile
     image: iflytek-chat:local
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}

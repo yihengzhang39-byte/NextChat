@@ -3,6 +3,49 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-06-26 (evening 3) — Sidebar brand logo sizing fix
+
+### Completed
+
+- Fixed the oversized **星跃 Chat** logo in the left sidebar header.
+- Root cause: `app/icons/chatgpt.svg` embeds the brand PNG as a 256x256 SVG, while
+  `.sidebar-logo` in `app/components/home.module.scss` had no explicit size. The
+  SVG therefore rendered at its intrinsic 256px size inside the sidebar flex row,
+  pushing over the title/subtitle and header layout.
+- Scoped the fix to the sidebar brand slot only: `.sidebar-logo` is now a stable
+  44x44 flex item, clips overflow, centers its content, and constrains direct
+  `svg`/`img` children to `width/height: 100%` with `object-fit: contain`.
+  Message avatars and favicon/PWA assets were not changed.
+- Follow-up: the sidebar slot now renders `app/icons/chatgpt.png` as a normal
+  `<img>` instead of the base64 SVG component. The SVG version was size-correct
+  after the CSS fix but could render as a blank white block in the sidebar; the
+  PNG import is already used elsewhere in the app and loads correctly in this
+  small brand slot.
+- Fixed the login page (`/#/auth`) logo overlap by shifting only
+  `.phone-auth-page .auth-logo` upward. The root issue is the same scaled 256px
+  brand SVG: `transform: scale(1.4)` extends the visual box below its layout box,
+  covering the **星跃 Chat** title. No auth flow, backend logic, favicon/PWA
+  assets, or chat avatars were changed.
+
+### Verification
+
+- `yarn build` could not run on the host because `yarn` is not installed there.
+- Verified equivalent production build through Docker:
+  `docker compose --profile no-proxy up -d --build` completed successfully.
+  Existing warnings remained: optional `bufferutil` / `utf-8-validate`,
+  autoprefixer `end` support warning, and the known `unused-imports` ESLint rule
+  crash; none blocked the build.
+- Verified real rendered layout with headless Edge after mock SMS login:
+  expanded desktop, collapsed desktop, and 390px mobile viewport all rendered the
+  sidebar logo at 44x44 with no overlap against the title, header action bar, or
+  chat list body.
+- Re-verified after switching the sidebar logo to PNG: the rendered element is an
+  `IMG`, `complete=true`, natural size 256x256, displayed at 44x44, with no
+  overlap against title/header/body regions.
+- Verified `/#/auth` at 830x800 with headless Edge DOM geometry: logo
+  bottom 253px, title top 256px, and no overlap with title, tips, or login
+  card.
+
 ## 2026-06-26 (evening 2) — Branding to "星跃 Chat", logo, legal docs, upload fix
 
 ### Completed
