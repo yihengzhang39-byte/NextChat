@@ -135,7 +135,10 @@ export class ErnieApi implements LLMApi {
     try {
       let chatPath = this.path(Baidu.ChatPath(modelConfig.model));
 
-      const chatPayload: RequestInit = {
+      // NOTE: do not annotate as RequestInit — keep headers inferred as
+      // Record<string, string> so it stays compatible with fetchEventSource
+      // (which requires headers?: Record<string, string>, not HeadersInit).
+      const chatPayload = {
         method: "POST",
         body: JSON.stringify(requestPayload),
         signal: controller.signal,

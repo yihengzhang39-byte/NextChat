@@ -73,7 +73,10 @@ http://localhost:3000
 - Current local Docker environment has been verified at
   `http://localhost:3000`.
 - **ESLint pre-commit hook broken**: `eslint-rule-composer` + `unused-imports/no-unused-imports` crashes with `Cannot read properties of undefined (reading 'loc')`. Use `git commit --no-verify` until fixed.
-- **`.env` is gitignored**: contains `BAIDU_API_KEY`. Template at `.env.template` needs updating for Baidu v2 setup.
+- **`.env` is gitignored**: contains `BAIDU_API_KEY`. `.env.template` updated 2026-06-26 with a Baidu v2 section and a single `DEFAULT_MODEL`.
+- **Docker stack verified on this machine 2026-06-26**: `docker compose --profile no-proxy up -d --build` → postgres healthy + app on `:3000` (HTTP 200), ERNIE 5.0 chat works end-to-end. The compose override now passes `BAIDU_API_KEY`/`DEFAULT_MODEL`/etc into the container.
+- **Prisma migrations are NOT auto-applied on container start** (Dockerfile CMD only runs `node server.js`). Run `prisma migrate deploy` manually against the DB after first bringing the stack up (move `prisma.config.ts` aside on the host, or run from a node env that has `dotenv`).
+- **Production build is strict**: `yarn dev` does not catch all TypeScript errors that `next build` (Docker) does. Run `yarn build` before relying on a "dev-verified" change.
 
 ## Next Suggested Steps
 

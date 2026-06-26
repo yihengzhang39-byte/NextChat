@@ -3,6 +3,33 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-06-26 (afternoon) — Local Docker full-stack brought up
+
+### Completed
+
+- **Docker full-stack verified on this machine** (`http://localhost:3000` → HTTP 200):
+  - Created local `.env` from template with the Baidu `bce-v3` Bearer key
+    (`.env` is gitignored — key never committed).
+  - `docker-compose.override.yml`: app containers now receive `BAIDU_API_KEY`,
+    `BAIDU_SECRET_KEY`, `BAIDU_URL`, `DEFAULT_MODEL`, `VISION_MODELS`,
+    `IFLYTEK_*`, `SMS_CODE_SECRET`. Previously only DB/admin/SMS-mock were passed,
+    so chat could not work inside the container.
+  - Applied Prisma migration `20260625143000_init` to the dockerized Postgres
+    (User / SmsCode / UserSession / Feedback tables created).
+  - End-to-end ERNIE 5.0 chat verified through the container
+    (`POST /api/baidu/v2/chat/completions` → valid completion).
+- **Fixed latent production-build type error** in `app/client/platforms/baidu.ts`:
+  `chatPayload` was annotated `RequestInit`, widening `headers` to `HeadersInit`,
+  which is incompatible with `fetchEventSource` (`Record<string,string>`).
+  `yarn dev` skips this strict check; `next build` (Docker) failed. Removed the
+  annotation so `headers` is inferred as `Record<string,string>`.
+
+### Notes
+
+- To apply Prisma migrations from the host, `prisma.config.ts` must be moved
+  aside temporarily (it `import "dotenv/config"` which is unavailable without a
+  host `yarn install`). `migrate deploy` then falls back to the schema datasource.
+
 ## 2026-06-26
 
 ### Completed
