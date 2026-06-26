@@ -17,8 +17,13 @@
 - `LegalDocument` fetches the existing Markdown files from `public/docs/` and
   renders them with the existing `Markdown` component.
 - Auth guard skips `/legal/*` so users can read agreements before logging in.
+- Login page UI was refreshed on the same branch: desktop now uses a
+  brand-panel + login-card layout, mobile collapses to one column, and the login
+  brand mark uses the PNG asset to avoid the embedded-SVG white-block rendering
+  issue.
 - Verification note: `yarn.cmd lint` cannot complete until dependencies are
-  installed in the workspace (`next` command not found).
+  fixed for the known `unused-imports/no-unused-imports` crash. `tsc`,
+  Prettier, and standalone SCSS compilation passed for the login-page change.
 
 **2026-06-26 (evening) — handoff to colleague. Everything below is on `origin/main`.**
 

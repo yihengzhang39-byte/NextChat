@@ -65,78 +65,110 @@ export function AuthPage() {
 
   return (
     <div className={clsx(styles["auth-page"], styles["phone-auth-page"])}>
-      <div className={styles["auth-title"]}>星跃 Chat</div>
-      <div className={styles["auth-tips"]}>
-        使用手机号验证码登录，开始安全、合规的智能问答服务。
-      </div>
-
-      <div className={styles["phone-auth-card"]}>
-        <label className={styles["phone-auth-field"]}>
-          <span>手机号</span>
-          <input
-            value={phone}
-            inputMode="tel"
-            maxLength={11}
-            placeholder="请输入手机号"
-            onChange={(e) => setPhone(e.currentTarget.value.trim())}
-          />
-        </label>
-
-        <label className={styles["phone-auth-field"]}>
-          <span>验证码</span>
-          <div className={styles["phone-auth-code"]}>
-            <input
-              value={code}
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="6 位验证码"
-              onChange={(e) => setCode(e.currentTarget.value.trim())}
-            />
-            <button disabled={!canSendCode || sending} onClick={sendCode}>
-              {sending ? "发送中" : "获取验证码"}
-            </button>
+      <div className={styles["phone-auth-shell"]}>
+        <section className={styles["phone-auth-brand"]}>
+          <div>
+            <div className={styles["phone-auth-kicker"]}>智能问答工作台</div>
+            <h1 className={styles["auth-title"]}>星跃 Chat</h1>
+            <p className={styles["auth-tips"]}>
+              使用手机号验证码登录，进入安全、合规的智能问答服务。
+            </p>
           </div>
-        </label>
+          <div className={styles["phone-auth-highlights"]}>
+            <span>企业数据隔离</span>
+            <span>统一账号入口</span>
+            <span>合规审计留痕</span>
+          </div>
+        </section>
 
-        <label className={styles["phone-auth-policy"]}>
-          <input
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.currentTarget.checked)}
+        <section className={styles["phone-auth-card"]}>
+          <div className={styles["phone-auth-card-head"]}>
+            <h2>手机号登录</h2>
+            <span>验证码 5 分钟内有效</span>
+          </div>
+
+          <label className={styles["phone-auth-field"]}>
+            <span>手机号</span>
+            <input
+              value={phone}
+              type="tel"
+              inputMode="tel"
+              maxLength={11}
+              placeholder="请输入手机号"
+              onChange={(e) => setPhone(e.currentTarget.value.trim())}
+            />
+          </label>
+
+          <label className={styles["phone-auth-field"]}>
+            <span>验证码</span>
+            <div className={styles["phone-auth-code"]}>
+              <input
+                value={code}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="6 位验证码"
+                onChange={(e) => setCode(e.currentTarget.value.trim())}
+              />
+              <button disabled={!canSendCode || sending} onClick={sendCode}>
+                {sending ? "发送中" : "获取验证码"}
+              </button>
+            </div>
+          </label>
+
+          <label className={styles["phone-auth-policy"]}>
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.currentTarget.checked)}
+            />
+            <span>
+              我已阅读并同意
+              <a
+                href="/#/legal/user-agreement"
+                target="_blank"
+                rel="noreferrer"
+              >
+                用户协议
+              </a>
+              和
+              <a
+                href="/#/legal/privacy-policy"
+                target="_blank"
+                rel="noreferrer"
+              >
+                隐私政策
+              </a>
+            </span>
+          </label>
+
+          {message && (
+            <div className={styles["phone-auth-message"]}>{message}</div>
+          )}
+          {mockCode && code === "" && (
+            <button
+              className={styles["phone-auth-fill"]}
+              onClick={() => setCode(mockCode)}
+            >
+              填入开发验证码
+            </button>
+          )}
+
+          <IconButton
+            className={styles["phone-auth-submit"]}
+            text={loading ? "登录中" : "登录"}
+            type="primary"
+            disabled={!canLogin || loading}
+            onClick={login}
           />
-          <span>
-            我已阅读并同意
-            <a href="/#/legal/user-agreement" target="_blank" rel="noreferrer">
-              用户协议
-            </a>
-            和
-            <a href="/#/legal/privacy-policy" target="_blank" rel="noreferrer">
-              隐私政策
-            </a>
-          </span>
-        </label>
-
-        {message && <div className={styles["phone-auth-message"]}>{message}</div>}
-        {mockCode && code === "" && (
-          <button
-            className={styles["phone-auth-fill"]}
-            onClick={() => setCode(mockCode)}
-          >
-            填入开发验证码
-          </button>
-        )}
-
-        <IconButton
-          text={loading ? "登录中" : "登录"}
-          type="primary"
-          disabled={!canLogin || loading}
-          onClick={login}
-        />
+        </section>
       </div>
 
-      <div className={styles["auth-actions"]}>
-        <IconButton text={Locale.Auth.Return} onClick={() => navigate(Path.Home)} />
-      </div>
+      <IconButton
+        className={styles["auth-return"]}
+        text={Locale.Auth.Return}
+        onClick={() => navigate(Path.Home)}
+      />
     </div>
   );
 }

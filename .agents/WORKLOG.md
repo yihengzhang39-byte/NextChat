@@ -41,6 +41,28 @@ use concrete dates.
 - `yarn.cmd lint` could start after escalation, but failed because project
   dependencies are not installed in this workspace (`next` command not found).
 
+## 2026-06-26 (evening 5) - Login page UI refresh
+
+### Completed
+
+- Reworked the SMS login page into a desktop two-column layout with a brand
+  panel, product highlights, and a focused login card.
+- Added responsive mobile styles so the login form collapses into a single
+  column and keeps the verification-code control within the viewport.
+- Switched the login page brand mark to the existing PNG logo asset, matching
+  the sidebar and avoiding the embedded-SVG rendering issue.
+
+### Verification
+
+- `node_modules\.bin\prettier.cmd --check app\components\auth.tsx app\components\auth.module.scss`
+  passed.
+- `node_modules\.bin\tsc.cmd --noEmit --pretty false` passed.
+- `node_modules\.bin\sass.cmd app\components\auth.module.scss $null` passed.
+- `yarn.cmd lint` still fails on the known pre-existing
+  `unused-imports/no-unused-imports` crash while linting `app/constant.ts:1`.
+- `yarn.cmd build` reached Next build after Prisma generation but failed on a
+  local filesystem permission issue scanning `C:\Users\50262\Application Data`.
+
 ## 2026-06-26 (evening 3) — Sidebar brand logo sizing fix
 
 ### Completed
