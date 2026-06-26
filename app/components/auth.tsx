@@ -70,7 +70,7 @@ export function AuthPage() {
         <BotIcon />
       </div>
 
-      <div className={styles["auth-title"]}>讯飞 Web Chat</div>
+      <div className={styles["auth-title"]}>星跃 Chat</div>
       <div className={styles["auth-tips"]}>
         使用手机号验证码登录，开始安全、合规的智能问答服务。
       </div>
