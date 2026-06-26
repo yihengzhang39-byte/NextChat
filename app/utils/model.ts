@@ -1,4 +1,8 @@
-import { DEFAULT_MODELS, ServiceProvider } from "../constant";
+import {
+  DEFAULT_MODELS,
+  PRODUCT_MODEL_ALLOWLIST,
+  ServiceProvider,
+} from "../constant";
 import { LLMModel } from "../client/api";
 
 const CustomSeq = {
@@ -14,6 +18,23 @@ const CustomSeq = {
     }
   },
 };
+
+export function isProductModel(model: {
+  name: string;
+  provider?: { id?: string; providerName?: string };
+}) {
+  return (
+    PRODUCT_MODEL_ALLOWLIST.has(
+      `${model.name}@${model.provider?.providerName}`,
+    ) || PRODUCT_MODEL_ALLOWLIST.has(`${model.name}@${model.provider?.id}`)
+  );
+}
+
+export function filterProductModels<
+  T extends { name: string; provider?: { id?: string; providerName?: string } },
+>(models: T[]) {
+  return models.filter(isProductModel);
+}
 
 const customProvider = (providerName: string) => ({
   id: providerName.toLowerCase(),
@@ -142,19 +163,16 @@ export function collectModelTableWithDefaultModel(
 ) {
   let modelTable = collectModelTable(models, customModels);
   if (defaultModel && defaultModel !== "") {
-    if (defaultModel.includes("@")) {
-      if (defaultModel in modelTable) {
-        modelTable[defaultModel].isDefault = true;
-      }
-    } else {
-      for (const key of Object.keys(modelTable)) {
-        if (
-          modelTable[key].available &&
-          getModelProvider(key)[0] == defaultModel
-        ) {
-          modelTable[key].isDefault = true;
-          break;
-        }
+    const [defaultModelName, defaultProviderName] = getModelProvider(defaultModel);
+    for (const key of Object.keys(modelTable)) {
+      const item = modelTable[key];
+      const providerMatched =
+        defaultProviderName === undefined ||
+        item.provider?.id === defaultProviderName ||
+        item.provider?.providerName === defaultProviderName;
+      if (item.available && item.name === defaultModelName && providerMatched) {
+        item.isDefault = true;
+        break;
       }
     }
   }

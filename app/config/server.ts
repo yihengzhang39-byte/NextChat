@@ -1,5 +1,10 @@
 import md5 from "spark-md5";
-import { DEFAULT_MODELS, DEFAULT_GA_ID } from "../constant";
+import {
+  DEFAULT_GA_ID,
+  DEFAULT_MODELS,
+  PRODUCT_DEFAULT_MODEL,
+  PRODUCT_DEFAULT_MODEL_WITH_PROVIDER,
+} from "../constant";
 import { isGPT4Model } from "../utils/model";
 
 declare global {
@@ -138,8 +143,9 @@ export const getServerSideConfig = () => {
 
   const disableGPT4 = !!process.env.DISABLE_GPT4;
   let customModels = process.env.CUSTOM_MODELS ?? "";
-  let defaultModel = process.env.DEFAULT_MODEL ?? "4.0Ultra@Iflytek";
-  let visionModels = process.env.VISION_MODELS ?? "ernie-5.0,4.0Ultra";
+  let defaultModel =
+    process.env.DEFAULT_MODEL ?? PRODUCT_DEFAULT_MODEL_WITH_PROVIDER;
+  let visionModels = process.env.VISION_MODELS ?? PRODUCT_DEFAULT_MODEL;
 
   if (disableGPT4) {
     if (customModels) customModels += ",";

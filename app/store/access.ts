@@ -19,6 +19,8 @@ import {
   CHATGLM_BASE_URL,
   SILICONFLOW_BASE_URL,
   AI302_BASE_URL,
+  PRODUCT_DEFAULT_MODEL,
+  PRODUCT_DEFAULT_MODEL_WITH_PROVIDER,
 } from "../constant";
 import { getHeaders } from "../client/api";
 import { getClientConfig } from "../config/client";
@@ -148,8 +150,8 @@ const DEFAULT_ACCESS_STATE = {
   disableGPT4: false,
   disableFastLink: false,
   customModels: "",
-  defaultModel: "4.0Ultra@Iflytek",
-  visionModels: "ernie-5.0,4.0Ultra",
+  defaultModel: PRODUCT_DEFAULT_MODEL_WITH_PROVIDER,
+  visionModels: PRODUCT_DEFAULT_MODEL,
 
   // tts config
   edgeTTSVoiceName: "zh-CN-YunxiNeural",

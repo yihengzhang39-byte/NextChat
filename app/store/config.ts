@@ -13,6 +13,9 @@ import {
   DEFAULT_TTS_VOICES,
   StoreKey,
   ServiceProvider,
+  PRODUCT_DEFAULT_MODEL,
+  PRODUCT_DEFAULT_PROVIDER,
+  PRODUCT_MODEL_ALLOWLIST,
 } from "../constant";
 import { createPersistStore } from "../utils/store";
 import type { Voice } from "rt-client";
@@ -64,8 +67,8 @@ export const DEFAULT_CONFIG = {
   models: DEFAULT_MODELS as any as LLMModel[],
 
   modelConfig: {
-    model: "gpt-4o-mini" as ModelType,
-    providerName: "OpenAI" as ServiceProvider,
+    model: PRODUCT_DEFAULT_MODEL as ModelType,
+    providerName: PRODUCT_DEFAULT_PROVIDER as ServiceProvider,
     temperature: 0.5,
     top_p: 1,
     max_tokens: 4000,
@@ -112,6 +115,35 @@ export type ModelConfig = ChatConfig["modelConfig"];
 export type TTSConfig = ChatConfig["ttsConfig"];
 export type RealtimeConfig = ChatConfig["realtimeConfig"];
 
+function isAllowedModelConfig(model: string, providerName?: string) {
+  return PRODUCT_MODEL_ALLOWLIST.has(`${model}@${providerName}`);
+}
+
+function isAllowedModelEntry(model: LLMModel) {
+  return (
+    PRODUCT_MODEL_ALLOWLIST.has(
+      `${model.name}@${model.provider?.providerName}`,
+    ) || PRODUCT_MODEL_ALLOWLIST.has(`${model.name}@${model.provider?.id}`)
+  );
+}
+
+function enforceProductModelConfig(config: ChatConfig["modelConfig"]) {
+  if (!isAllowedModelConfig(config.model, config.providerName)) {
+    config.model = PRODUCT_DEFAULT_MODEL as ModelType;
+    config.providerName = PRODUCT_DEFAULT_PROVIDER as ServiceProvider;
+  }
+
+  if (
+    config.compressModel &&
+    !isAllowedModelConfig(
+      config.compressModel,
+      config.compressProviderName,
+    )
+  ) {
+    config.compressModel = "";
+    config.compressProviderName = "";
+  }
+}
 export function limitNumber(
   x: number,
   min: number,
@@ -208,7 +240,13 @@ export const useAppConfig = createPersistStore(
         if (idx !== -1) models[idx] = pModel;
         else models.push(pModel);
       });
-      return { ...currentState, ...state, models: models };
+      const merged = {
+        ...currentState,
+        ...state,
+        models: models.filter(isAllowedModelEntry),
+      };
+      enforceProductModelConfig(merged.modelConfig);
+      return merged;
     },
 
     migrate(persistedState, version) {

@@ -141,6 +141,14 @@ export enum ServiceProvider {
 
 // Google API safety settings, see https://ai.google.dev/gemini-api/docs/safety-settings
 // BLOCK_NONE will not block any content, and BLOCK_ONLY_HIGH will block only high-risk content.
+export const PRODUCT_DEFAULT_MODEL = "ernie-5.0";
+export const PRODUCT_DEFAULT_PROVIDER = ServiceProvider.Baidu;
+export const PRODUCT_DEFAULT_MODEL_WITH_PROVIDER =
+  `${PRODUCT_DEFAULT_MODEL}@${PRODUCT_DEFAULT_PROVIDER}`;
+export const PRODUCT_MODEL_ALLOWLIST = new Set([
+  PRODUCT_DEFAULT_MODEL_WITH_PROVIDER,
+  `${PRODUCT_DEFAULT_MODEL}@baidu`,
+]);
 export enum GoogleSafetySettingsThreshold {
   BLOCK_NONE = "BLOCK_NONE",
   BLOCK_ONLY_HIGH = "BLOCK_ONLY_HIGH",
@@ -753,7 +761,7 @@ const ai302Models = [
 ];
 
 let seq = 1000; // 内置的模型序号生成器从1000开始
-export const DEFAULT_MODELS = [
+const UPSTREAM_DEFAULT_MODELS = [
   ...openaiModels.map((name) => ({
     name,
     available: true,
@@ -920,6 +928,13 @@ export const DEFAULT_MODELS = [
     },
   })),
 ] as const;
+
+export const DEFAULT_MODELS = UPSTREAM_DEFAULT_MODELS.filter(
+  (model) =>
+    PRODUCT_MODEL_ALLOWLIST.has(
+      `${model.name}@${model.provider?.providerName}`,
+    ) || PRODUCT_MODEL_ALLOWLIST.has(`${model.name}@${model.provider?.id}`),
+) as typeof UPSTREAM_DEFAULT_MODELS;
 
 export const CHAT_PAGE_SIZE = 15;
 export const MAX_RENDER_MSG_COUNT = 45;
