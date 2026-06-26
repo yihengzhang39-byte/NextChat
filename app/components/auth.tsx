@@ -3,7 +3,6 @@ import { IconButton } from "./button";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Path } from "../constant";
-import BotIcon from "../icons/bot.svg";
 import Locale from "../locales";
 import clsx from "clsx";
 
@@ -66,10 +65,6 @@ export function AuthPage() {
 
   return (
     <div className={clsx(styles["auth-page"], styles["phone-auth-page"])}>
-      <div className={clsx("no-dark", styles["auth-logo"])}>
-        <BotIcon />
-      </div>
-
       <div className={styles["auth-title"]}>星跃 Chat</div>
       <div className={styles["auth-tips"]}>
         使用手机号验证码登录，开始安全、合规的智能问答服务。

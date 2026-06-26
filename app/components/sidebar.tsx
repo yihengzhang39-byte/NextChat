@@ -5,7 +5,6 @@ import styles from "./home.module.scss";
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
 import GithubIcon from "../icons/github.svg";
-import ChatGptIcon from "../icons/chatgpt.png";
 import AddIcon from "../icons/add.svg";
 import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
@@ -191,7 +190,9 @@ export function SideBarHeader(props: {
           </div>
           <div className={styles["sidebar-sub-title"]}>{subTitle}</div>
         </div>
-        <div className={clsx(styles["sidebar-logo"], "no-dark")}>{logo}</div>
+        {logo && (
+          <div className={clsx(styles["sidebar-logo"], "no-dark")}>{logo}</div>
+        )}
       </div>
       {children}
     </Fragment>
@@ -252,7 +253,6 @@ export function SideBar(props: { className?: string }) {
       <SideBarHeader
         title="星跃 Chat"
         subTitle="安全、合规的智能问答服务"
-        logo={<img src={ChatGptIcon.src} alt="星跃 Chat" />}
         shouldNarrow={shouldNarrow}
       >
         <div className={styles["sidebar-header-bar"]}>

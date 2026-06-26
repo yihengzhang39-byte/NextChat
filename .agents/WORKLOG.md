@@ -2,6 +2,21 @@
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+## 2026-06-26 (evening 4) — Remove auth and sidebar brand logos
+
+### Completed
+
+- Removed the large brand logo from the login page (`app/components/auth.tsx`) by
+  dropping the `BotIcon` import and logo block.
+- Removed the brand logo from the left sidebar header (`app/components/sidebar.tsx`)
+  by no longer passing a logo and rendering the logo container only when a logo
+  is explicitly provided. Chat/model avatars were not changed.
+
+### Verification
+
+- Code diff checked to confirm only the login page and sidebar brand slots were
+  affected. Runtime build was not rerun for this small TSX-only UI removal.
+
 
 ## 2026-06-26 (evening 3) — Sidebar brand logo sizing fix
 
