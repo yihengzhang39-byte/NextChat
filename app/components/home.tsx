@@ -69,6 +69,13 @@ const Feedback = dynamic(async () => (await import("./feedback")).Feedback, {
   loading: () => <Loading noLogo />,
 });
 
+const LegalDocument = dynamic(
+  async () => (await import("./legal-doc")).LegalDocument,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
+
 const FeedbackAdmin = dynamic(
   async () => (await import("./admin-feedback")).FeedbackAdmin,
   {
@@ -176,6 +183,7 @@ function Screen() {
   const isArtifact = location.pathname.includes(Path.Artifacts);
   const isHome = location.pathname === Path.Home;
   const isAuth = location.pathname === Path.Auth;
+  const isLegal = location.pathname.startsWith(Path.Legal);
   const isSd = location.pathname === Path.Sd;
   const isSdNew = location.pathname === Path.SdNew;
 
@@ -188,7 +196,7 @@ function Screen() {
   }, []);
 
   useEffect(() => {
-    if (isAuth || location.pathname === Path.FeedbackAdmin) return;
+    if (isAuth || isLegal || location.pathname === Path.FeedbackAdmin) return;
 
     fetch("/api/auth/me")
       .then((res) => {
@@ -197,7 +205,7 @@ function Screen() {
         }
       })
       .catch(() => navigate(Path.Auth));
-  }, [isAuth, location.pathname, navigate]);
+  }, [isAuth, isLegal, location.pathname, navigate]);
 
   if (isArtifact) {
     return (
@@ -208,6 +216,13 @@ function Screen() {
   }
   const renderContent = () => {
     if (isAuth) return <AuthPage />;
+    if (isLegal) {
+      return (
+        <Routes>
+          <Route path={`${Path.Legal}/:doc`} element={<LegalDocument />} />
+        </Routes>
+      );
+    }
     if (isSd) return <Sd />;
     if (isSdNew) return <Sd />;
     return (

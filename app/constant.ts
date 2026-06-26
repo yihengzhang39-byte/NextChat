@@ -50,6 +50,7 @@ export enum Path {
   Masks = "/masks",
   Plugins = "/plugins",
   Auth = "/auth",
+  Legal = "/legal",
   Feedback = "/feedback",
   FeedbackAdmin = "/admin/feedback",
   Sd = "/sd",

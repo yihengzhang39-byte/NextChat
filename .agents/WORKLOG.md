@@ -3,6 +3,29 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-06-26 (evening 4) - Legal document rendering
+
+### Completed
+
+- Created branch `feature/legal-doc-render` from `origin/main`
+  (`https://github.com/yihengzhang39-byte/NextChat.git`).
+- Added an in-app legal document route at `/#/legal/:doc`.
+- Updated login page agreement links from direct static Markdown files to:
+  - `/#/legal/user-agreement`
+  - `/#/legal/privacy-policy`
+- Added `LegalDocument`, which fetches `public/docs/*.md` and renders the content
+  with the existing `Markdown` component, so the agreement and privacy policy no
+  longer open as raw Markdown text.
+- Allowed unauthenticated users to view legal document routes, matching the login
+  page flow.
+
+### Verification
+
+- Static route/link review completed.
+- `yarn lint` via PowerShell was blocked by script execution policy.
+- `yarn.cmd lint` could start after escalation, but failed because project
+  dependencies are not installed in this workspace (`next` command not found).
+
 ## 2026-06-26 (evening 3) — Sidebar brand logo sizing fix
 
 ### Completed

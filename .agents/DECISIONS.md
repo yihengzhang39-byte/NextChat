@@ -3,6 +3,29 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-06-26: Use Colleague Repository as `origin`
+
+### Context
+
+The collaborator moved the project into
+`https://github.com/yihengzhang39-byte/NextChat.git`, and this repository is now
+the chosen shared development remote.
+
+### Decision
+
+- Use `origin` for the colleague repository:
+  `https://github.com/yihengzhang39-byte/NextChat.git`.
+- Keep the previous owner repository as `old-origin` for reference:
+  `https://github.com/ronvis7/iflytek_chat.git`.
+- Start new product work from `origin/main` unless intentionally continuing a
+  feature branch such as `origin/model`.
+
+### Consequences
+
+- New feature branches should be based on `origin/main`.
+- Pull requests and pushes for shared product development should target the
+  colleague repository unless the team changes the collaboration model again.
+
 ## 2026-06-26: Baidu v2 API Integration — Bearer Token Auth
 
 ### Context
