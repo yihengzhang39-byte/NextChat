@@ -161,6 +161,14 @@ export function uploadImage(file: Blob): Promise<string> {
         return res?.data;
       }
       throw Error(`upload Error: ${res?.msg}`);
+    })
+    .catch((e) => {
+      // The service worker may be registered (_SW_ENABLED true) but not yet
+      // controlling the page (e.g. right after a hard refresh), so the POST to
+      // UPLOAD_URL is not intercepted and there is no server route to handle it.
+      // Fall back to an inline base64 data URL so upload never silently fails.
+      console.warn("[uploadImage] SW upload failed, falling back to base64", e);
+      return compressImage(file, 256 * 1024);
     });
 }
 
