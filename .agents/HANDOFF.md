@@ -9,6 +9,21 @@
 - Development governance documents have been added under `.agents/`.
 - Web Chat foundation (PostgreSQL/Prisma, SMS login, feedback APIs, login/feedback pages) merged.
 
+**2026-06-26 (evening) — handoff to colleague. Everything below is on `origin/main`.**
+
+- ✅ Local Docker full-stack verified (`localhost:3000`, postgres + app). ERNIE 5.0
+  chat works (streaming + non-streaming).
+- ✅ Image upload (multimodal) enabled for ERNIE 5.0, with a base64 fallback so it
+  never silently fails when the service worker is not controlling the page.
+- ✅ Rebranded to **星跃 Chat** (UI titles, page metadata, PWA manifest) and replaced
+  the logo/favicons with the 星跃 logo (source `星跃icon.png` at repo root).
+  ⚠️ logo source is only 43×40 px — large PWA icons are blurry; regen from a ≥512px
+  source (recipe in WORKLOG).
+- ✅ User Agreement / Privacy Policy wired up at `public/docs/*.md` (served at
+  `/docs/...`, linked from the login page). Source `.docx` committed at repo root.
+- ▶️ **Open next steps** (see TODO.md): Iflytek key + switch default provider back;
+  simplify UI to single-model; container auto-migration; Aliyun SMS; fix ESLint hook.
+
 **2026-06-26 update:**
 
 - ✅ **Baidu ERNIE 5.0 (ernie-5.0) v2 API integration complete.**

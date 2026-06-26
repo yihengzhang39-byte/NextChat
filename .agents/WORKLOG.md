@@ -3,6 +3,40 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-06-26 (evening 2) — Branding to "星跃 Chat", logo, legal docs, upload fix
+
+### Completed
+
+- **Image upload reliability fix** (`app/utils/chat.ts`): `uploadImage` relied
+  entirely on the service worker (`/api/cache/upload`); there is no server-side
+  `/api/cache` route. Right after a hard refresh the SW is registered
+  (`_SW_ENABLED` true) but not yet controlling the page, so the POST was not
+  intercepted and failed silently (no UI feedback). Added a `.catch` fallback to
+  inline base64 via `compressImage`, so upload never silently fails regardless of
+  SW state.
+- **Rebranded "讯飞 Web Chat" → "星跃 Chat"**:
+  - Titles in `app/components/auth.tsx` and `app/components/sidebar.tsx`
+    (subtitle "安全、合规的智能问答服务" kept).
+  - `app/layout.tsx` metadata title/description and `public/site.webmanifest`
+    name → "星跃 Chat".
+- **Replaced the ChatGPT logo with the 星跃 logo everywhere**. Source is
+  `星跃icon.png` at repo root. Regenerated all assets with Pillow (centered-square
+  pad → resize). To avoid touching every import site, `app/icons/chatgpt.svg` and
+  `app/icons/bot.svg` now embed the PNG as a base64 `<image>` (verified the
+  base64 survives SVGR and lands in the deployed bundle). Also replaced
+  `app/icons/chatgpt.png` and the full `public/` favicon set (ico + 16/32/180/192/512).
+  - NOTE: the current `星跃icon.png` source is only 43×40 px, so the large PWA
+    icons (192/512) are upscaled and blurry. Re-run the asset generation from a
+    ≥512px source for crisp icons. Regen recipe: Pillow, pad to centered square,
+    `resize(n, LANCZOS)`, write favicons + `chatgpt.png`, and embed a 256px PNG
+    as base64 into `chatgpt.svg` / `bot.svg`.
+- **User Agreement & Privacy Policy configured** from the two Word docs
+  (`星跃Chat_用户协议.docx`, `星跃Chat_隐私政策.docx`, owner: 无锡讯智未来信息科技有限公司).
+  Converted to markdown into `public/docs/user-agreement.md` and
+  `public/docs/privacy-policy.md` (served at `/docs/...`, which the login page
+  links to — previously those links 404'd because the files were only under the
+  non-served root `docs/`). Root `docs/` copies kept in sync for reference.
+
 ## 2026-06-26 (evening) — ERNIE 5.0 image upload (multimodal)
 
 ### Completed

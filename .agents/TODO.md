@@ -12,10 +12,13 @@
 ## Short-term
 
 - [x] 本机 Docker 全栈跑通（postgres + app，localhost:3000，ERNIE 5.0 端到端验证）
+- [x] ERNIE 5.0 图片上传（多模态）+ 上传失败 base64 兜底
+- [x] 品牌化：文案/元数据/manifest 改为 星跃 Chat，替换全套 logo 与 favicon
+- [x] 替换占位协议和隐私政策内容（`public/docs/*.md`，源 docx 在仓库根目录）
+- [ ] **logo 源图升级**：当前 `星跃icon.png` 仅 43×40，大尺寸 PWA 图标（192/512）模糊，需 ≥512px 源图重新生成
 - [ ] 让容器启动时自动应用 Prisma 迁移（当前 Dockerfile CMD 只跑 `node server.js`，需手动 `migrate deploy`）
 - [ ] 获取讯飞星火最新模型 API Key，切回讯飞作为默认 provider
 - [ ] 简化 UI：移除模型切换下拉框，隐藏 Settings 中的 Provider 选择（像 DeepSeek 网页端，只服务单一模型）
-- [ ] 替换占位协议和隐私政策内容
 - [ ] 配置阿里云短信凭证
 - [ ] 修复 ESLint pre-commit hook 的 `unused-imports` 规则 bug（`eslint-rule-composer` 版本兼容问题）
 
