@@ -106,11 +106,11 @@ export function AuthPage() {
           />
           <span>
             我已阅读并同意
-            <a href="/docs/user-agreement.md" target="_blank">
+            <a href="/#/legal/user-agreement" target="_blank" rel="noreferrer">
               用户协议
             </a>
             和
-            <a href="/docs/privacy-policy.md" target="_blank">
+            <a href="/#/legal/privacy-policy" target="_blank" rel="noreferrer">
               隐私政策
             </a>
           </span>

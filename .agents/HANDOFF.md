@@ -2,12 +2,23 @@
 
 ## Current Status
 
-- The original NextChat repository has been copied into
-  `https://github.com/ronvis7/iflytek_chat.git`.
+- The active collaboration repository is now
+  `https://github.com/yihengzhang39-byte/NextChat.git`.
 - Local `main` tracks `origin/main`.
-- The original upstream project is retained as `upstream`.
+- The previous repository is retained locally as `old-origin`
+  (`https://github.com/ronvis7/iflytek_chat.git`).
 - Development governance documents have been added under `.agents/`.
 - Web Chat foundation (PostgreSQL/Prisma, SMS login, feedback APIs, login/feedback pages) merged.
+
+**2026-06-26 (evening 4) - current feature branch:** `feature/legal-doc-render`
+
+- Login page legal links now open app routes (`/#/legal/user-agreement` and
+  `/#/legal/privacy-policy`) instead of raw `/docs/*.md` files.
+- `LegalDocument` fetches the existing Markdown files from `public/docs/` and
+  renders them with the existing `Markdown` component.
+- Auth guard skips `/legal/*` so users can read agreements before logging in.
+- Verification note: `yarn.cmd lint` cannot complete until dependencies are
+  installed in the workspace (`next` command not found).
 
 **2026-06-26 (evening) — handoff to colleague. Everything below is on `origin/main`.**
 
