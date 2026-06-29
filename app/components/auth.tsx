@@ -87,80 +87,82 @@ export function AuthPage() {
             <span>验证码 5 分钟内有效</span>
           </div>
 
-          <label className={styles["phone-auth-field"]}>
-            <span>手机号</span>
-            <input
-              value={phone}
-              type="tel"
-              inputMode="tel"
-              maxLength={11}
-              placeholder="请输入手机号"
-              onChange={(e) => setPhone(e.currentTarget.value.trim())}
-            />
-          </label>
-
-          <label className={styles["phone-auth-field"]}>
-            <span>验证码</span>
-            <div className={styles["phone-auth-code"]}>
+          <div className={styles["phone-auth-form"]}>
+            <label className={styles["phone-auth-field"]}>
+              <span>手机号</span>
               <input
-                value={code}
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="6 位验证码"
-                onChange={(e) => setCode(e.currentTarget.value.trim())}
+                value={phone}
+                type="tel"
+                inputMode="tel"
+                maxLength={11}
+                placeholder="请输入手机号"
+                onChange={(e) => setPhone(e.currentTarget.value.trim())}
               />
-              <button disabled={!canSendCode || sending} onClick={sendCode}>
-                {sending ? "发送中" : "获取验证码"}
+            </label>
+
+            <label className={styles["phone-auth-field"]}>
+              <span>验证码</span>
+              <div className={styles["phone-auth-code"]}>
+                <input
+                  value={code}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6 位验证码"
+                  onChange={(e) => setCode(e.currentTarget.value.trim())}
+                />
+                <button disabled={!canSendCode || sending} onClick={sendCode}>
+                  {sending ? "发送中" : "获取验证码"}
+                </button>
+              </div>
+            </label>
+
+            <label className={styles["phone-auth-policy"]}>
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.currentTarget.checked)}
+              />
+              <span>
+                我已阅读并同意
+                <a
+                  href="/#/legal/user-agreement"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  用户协议
+                </a>
+                和
+                <a
+                  href="/#/legal/privacy-policy"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  隐私政策
+                </a>
+              </span>
+            </label>
+
+            {message && (
+              <div className={styles["phone-auth-message"]}>{message}</div>
+            )}
+            {mockCode && code === "" && (
+              <button
+                className={styles["phone-auth-fill"]}
+                onClick={() => setCode(mockCode)}
+              >
+                填入开发验证码
               </button>
-            </div>
-          </label>
+            )}
 
-          <label className={styles["phone-auth-policy"]}>
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.currentTarget.checked)}
+            <IconButton
+              className={styles["phone-auth-submit"]}
+              text={loading ? "登录中" : "登录"}
+              type="primary"
+              disabled={!canLogin || loading}
+              onClick={login}
             />
-            <span>
-              我已阅读并同意
-              <a
-                href="/#/legal/user-agreement"
-                target="_blank"
-                rel="noreferrer"
-              >
-                用户协议
-              </a>
-              和
-              <a
-                href="/#/legal/privacy-policy"
-                target="_blank"
-                rel="noreferrer"
-              >
-                隐私政策
-              </a>
-            </span>
-          </label>
-
-          {message && (
-            <div className={styles["phone-auth-message"]}>{message}</div>
-          )}
-          {mockCode && code === "" && (
-            <button
-              className={styles["phone-auth-fill"]}
-              onClick={() => setCode(mockCode)}
-            >
-              填入开发验证码
-            </button>
-          )}
-
-          <IconButton
-            className={styles["phone-auth-submit"]}
-            text={loading ? "登录中" : "登录"}
-            type="primary"
-            disabled={!canLogin || loading}
-            onClick={login}
-          />
+          </div>
         </section>
       </div>
 

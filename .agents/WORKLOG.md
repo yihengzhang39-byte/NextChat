@@ -2,6 +2,35 @@
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+## 2026-06-29 - Login form inner spacing fix
+
+### Completed
+
+- Fixed the login card form controls in `app/components/auth.tsx` and
+  `app/components/auth.module.scss`.
+- Root cause: the phone input uses `type="tel"`, so it did not inherit the
+  global `input[type="text"]` `box-sizing: border-box` rule. Combined with
+  `width: 100%` and horizontal padding, the rendered input exceeded the card
+  content area and looked too close to the right edge.
+- Added a shared `.phone-auth-form` wrapper around the phone input, code row,
+  agreement row, message/mock-code controls, and submit button so form controls
+  share one content container.
+- Updated the login card/form CSS to use stable inner padding, explicit
+  `box-sizing: border-box`, full-width form fields, and a safer verification-code
+  row with `flex: 1`/`min-width: 0` for the input and a fixed/min-width send-code
+  button.
+- No backend, Prisma, Docker Compose, SMS API, model config, logo, chat page, or
+  legal-document logic was changed.
+
+### Verification
+
+- Per the latest user instruction, verification was not run by Codex.
+- Suggested local checks:
+  - `yarn build`
+  - `docker compose --profile no-proxy up -d --build`
+  - Open `http://localhost:3000/#/auth` and check desktop/narrow layouts for
+    symmetric form spacing, aligned controls, and no horizontal scrollbar.
+
 ## 2026-06-26 (evening 4) — Remove auth and sidebar brand logos
 
 ### Completed
