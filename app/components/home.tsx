@@ -5,9 +5,6 @@ require("../polyfill");
 import { useEffect, useState } from "react";
 import styles from "./home.module.scss";
 
-import BotIcon from "../icons/bot.svg";
-import LoadingIcon from "../icons/three-dots.svg";
-
 import { getCSSVar, useMobileScreen } from "../utils";
 
 import dynamic from "next/dynamic";
@@ -32,72 +29,67 @@ import { useAccessStore } from "../store";
 import clsx from "clsx";
 import { initializeMcpSystem, isMcpEnabled } from "../mcp/actions";
 
-export function Loading(props: { noLogo?: boolean }) {
-  return (
-    <div className={clsx("no-dark", styles["loading-content"])}>
-      {!props.noLogo && <BotIcon />}
-      <LoadingIcon />
-    </div>
-  );
+export function Loading() {
+  return null;
 }
 
 const Artifacts = dynamic(async () => (await import("./artifacts")).Artifacts, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const Settings = dynamic(async () => (await import("./settings")).Settings, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const Chat = dynamic(async () => (await import("./chat")).Chat, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const NewChat = dynamic(async () => (await import("./new-chat")).NewChat, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const MaskPage = dynamic(async () => (await import("./mask")).MaskPage, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const PluginPage = dynamic(async () => (await import("./plugin")).PluginPage, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const Feedback = dynamic(async () => (await import("./feedback")).Feedback, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const LegalDocument = dynamic(
   async () => (await import("./legal-doc")).LegalDocument,
   {
-    loading: () => <Loading noLogo />,
+    loading: () => <Loading />,
   },
 );
 
 const FeedbackAdmin = dynamic(
   async () => (await import("./admin-feedback")).FeedbackAdmin,
   {
-    loading: () => <Loading noLogo />,
+    loading: () => <Loading />,
   },
 );
 
 const SearchChat = dynamic(
   async () => (await import("./search-chat")).SearchChatPage,
   {
-    loading: () => <Loading noLogo />,
+    loading: () => <Loading />,
   },
 );
 
 const Sd = dynamic(async () => (await import("./sd")).Sd, {
-  loading: () => <Loading noLogo />,
+  loading: () => <Loading />,
 });
 
 const McpMarketPage = dynamic(
   async () => (await import("./mcp-market")).McpMarketPage,
   {
-    loading: () => <Loading noLogo />,
+    loading: () => <Loading />,
   },
 );
 
@@ -300,9 +292,7 @@ export function Home() {
     initMcp();
   }, []);
 
-  if (!useHasHydrated()) {
-    return <Loading />;
-  }
+  if (!useHasHydrated()) return null;
 
   return (
     <ErrorBoundary>

@@ -2,6 +2,21 @@
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+## 2026-06-30 - Remove startup loading logo screen
+
+### Completed
+
+- Removed the initial full-screen startup loading UI from `app/components/home.tsx`.
+- Actual source: `Home` returned the local `Loading` component before client hydration completed; that component rendered `app/icons/bot.svg` plus `app/icons/three-dots.svg`. Dynamic route fallbacks in the same file reused the same component for short preload states.
+- Changed `Loading` to render nothing and changed the pre-hydration branch to return `null` directly.
+- Removed the now-unused `.loading-content` full-screen centering style from `app/components/home.module.scss`.
+- Static logo assets, favicon/PWA manifest assets, sidebar code, auth logic, chat logic, model/provider config, Prisma, PostgreSQL, and Docker Compose were not changed.
+
+### Verification
+
+- Host `yarn build` could not run directly because `yarn` was not on PATH; `corepack yarn build` started Yarn 1.22.19 but failed before build because host dependencies were absent (`prisma` command not found). `corepack yarn install --frozen-lockfile` timed out before creating usable `node_modules`.
+- Docker production-style build completed via `docker compose --profile no-proxy up -d --build`. The build reached `yarn build` inside Docker and completed successfully, with existing warnings only: optional `bufferutil` / `utf-8-validate`, autoprefixer `end` support, and the known `unused-imports/no-unused-imports` ESLint crash message.
+- Browser hard-refresh verification was not performed by Codex per user instruction; user will test locally.
 ## 2026-06-29 - Login form inner spacing fix
 
 ### Completed
