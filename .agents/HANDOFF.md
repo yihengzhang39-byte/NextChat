@@ -2,6 +2,62 @@
 
 ## Current Status
 
+**2026-07-01 - current feature branch:** `feature/iflytek-image-websocket`
+
+- Iflytek image understanding is wired through a server-side Node WebSocket
+  proxy. The browser calls the local Iflytek API route; API Secret, HMAC
+  signature, Authorization query data, and signed upstream URL remain server-side.
+- The latest Docker log diagnosis showed upstream WebSocket open succeeded, but
+  `ws.send()` failed in the bundled standalone route with a buffer mask helper
+  error. The route now disables `ws` optional native buffer/UTF-8 validation
+  modules before loading `ws`, so the pure JavaScript fallback is used.
+- The image request now matches the verified Python payload shape: `domain=imagev4`,
+  `stream=true`, base64 image entries with `content_meta.url=false`, and image
+  entries before the user question. The server converts WebSocket frames into
+  OpenAI-compatible SSE chunks and sends a safe error SSE when no valid text is
+  returned.
+- `image@Iflytek` is now in the product model allowlist and `image` is listed as
+  an Iflytek model. With local `.env` set to `DEFAULT_MODEL=image@Iflytek` and
+  `VISION_MODELS` including `image`, the chat UI should show image upload and
+  route image questions to Iflytek.
+- Baidu provider code and existing non-image Iflytek HTTP proxy behavior are
+  still present. Ordinary text-chat default behavior should be confirmed during
+  user testing before removing Baidu or simplifying the UI.
+- Docker Compose override now passes the Iflytek image environment field names
+  into app containers. `.env.template` documents the field names without real
+  credential values.
+- Verification status: Codex formatted the touched TypeScript files with Prettier;
+  `.env.template` could not be handled by Prettier because no parser is inferred.
+  `git diff --check` passed with line-ending warnings only, and
+  `corepack yarn tsc --noEmit` passed. `corepack yarn build` reached Next build
+  but failed on the existing Windows `EPERM: scandir C:\Users\ZYH\Application Data`
+  permission issue. Docker rebuild, container status, HTTP check, browser checks,
+  and real image API calls are intentionally left for the user per instruction.
+- Security note: server config logging no longer prints raw selected API-key
+  values. Continue avoiding credential, signature, Authorization, and signed URL
+  output in logs and documents.
+- Image diagnostics are request-ID based and must stay limited to counts, timings,
+  statuses, MIME/size metadata, and text lengths; never log credentials, signed
+  URLs, image base64, full prompts, or full model answers.
+
+Suggested user-run verification commands for this branch:
+
+```powershell
+git diff --check
+corepack yarn tsc --noEmit
+docker compose --profile no-proxy up -d --force-recreate --build
+docker compose --profile no-proxy ps
+try { (Invoke-WebRequest -Uri 'http://localhost:3000' -UseBasicParsing -TimeoutSec 5).StatusCode } catch { $_.Exception.Message }
+```
+
+Manual browser check:
+
+- Open `http://localhost:3000`.
+- Confirm the active model is `image@Iflytek`.
+- Upload a normal-size non-sensitive image and ask a simple image question.
+- Confirm the answer streams or completes, errors are readable, and browser logs
+  do not show API Secret, signatures, Authorization query data, or signed
+  upstream URLs.
 - The active collaboration repository is now
   `https://github.com/yihengzhang39-byte/NextChat.git`.
 - Local `main` tracks `origin/main`.

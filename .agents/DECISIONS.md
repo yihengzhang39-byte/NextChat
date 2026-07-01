@@ -3,6 +3,42 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-01: Iflytek Image Understanding via Server WebSocket Proxy
+
+### Context
+
+The Iflytek image-understanding API is a signed WebSocket service, not a normal
+HTTP JSON POST endpoint. The browser must not receive API Secret, signatures,
+Authorization query parameters, or the signed upstream URL.
+
+### Decision
+
+- Route `image@Iflytek` through a Node runtime server API route.
+- Generate the HMAC-SHA256 WebSocket signature only on the server.
+- Convert existing OpenAI-style multimodal frontend messages into Iflytek's
+  image payload shape on the server.
+- Convert upstream WebSocket frames back into OpenAI-compatible SSE chunks so
+  the existing chat UI can keep using its current streaming path.
+- Keep the image request compatible with the verified API shape: `domain=imagev4`,
+  `parameter.chat.stream=true`, image entries before the user question, and
+  `content_meta.url=false` for base64 image content.
+- Use a dedicated frontend timeout for `image@Iflytek` instead of changing the
+  global text-chat timeout.
+- Keep Baidu and existing non-image Iflytek HTTP proxy behavior available.
+
+### Consequences
+
+- Iflytek image credentials remain server-side and are passed through local
+  environment variables and Docker Compose only.
+- Browser requests continue to target the app's own `/api/iflytek/...` route.
+- The image path requires Node runtime support and should not be bundled into
+  the generic Edge catch-all provider route.
+- End-to-end validation requires a normal-size test image and real local
+  credentials in gitignored `.env`.
+- Iflytek image logs must remain diagnostic only: request IDs, counts, timings,
+  statuses, and lengths are allowed; credentials, signatures, signed URLs,
+  image base64, and full prompt/answer text are not.
+
 ## 2026-06-26: Use Colleague Repository as `origin`
 
 ### Context

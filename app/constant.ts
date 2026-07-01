@@ -118,6 +118,7 @@ export const STORAGE_KEY = "chatgpt-next-web";
 
 export const REQUEST_TIMEOUT_MS = 60000;
 export const REQUEST_TIMEOUT_MS_FOR_THINKING = REQUEST_TIMEOUT_MS * 5;
+export const IFLYTEK_IMAGE_REQUEST_TIMEOUT_MS = 150000;
 
 export const EXPORT_MESSAGE_CLASS_NAME = "export-markdown";
 
@@ -144,11 +145,12 @@ export enum ServiceProvider {
 // BLOCK_NONE will not block any content, and BLOCK_ONLY_HIGH will block only high-risk content.
 export const PRODUCT_DEFAULT_MODEL = "ernie-5.0";
 export const PRODUCT_DEFAULT_PROVIDER = ServiceProvider.Baidu;
-export const PRODUCT_DEFAULT_MODEL_WITH_PROVIDER =
-  `${PRODUCT_DEFAULT_MODEL}@${PRODUCT_DEFAULT_PROVIDER}`;
+export const PRODUCT_DEFAULT_MODEL_WITH_PROVIDER = `${PRODUCT_DEFAULT_MODEL}@${PRODUCT_DEFAULT_PROVIDER}`;
 export const PRODUCT_MODEL_ALLOWLIST = new Set([
   PRODUCT_DEFAULT_MODEL_WITH_PROVIDER,
   `${PRODUCT_DEFAULT_MODEL}@baidu`,
+  `image@${ServiceProvider.Iflytek}`,
+  "image@iflytek",
 ]);
 export enum GoogleSafetySettingsThreshold {
   BLOCK_NONE = "BLOCK_NONE",
@@ -264,6 +266,7 @@ export const Moonshot = {
 export const Iflytek = {
   ExampleEndpoint: IFLYTEK_BASE_URL,
   ChatPath: "v1/chat/completions",
+  ImageChatPath: "v2.1/image",
 };
 
 export const DeepSeek = {
@@ -511,7 +514,7 @@ export const VISION_MODEL_REGEXES = [
   /o3/,
   /o4-mini/,
   /grok-4/i,
-  /gpt-5/
+  /gpt-5/,
 ];
 
 export const EXCLUDE_VISION_MODEL_REGEXES = [/claude-3-5-haiku-20241022/];
@@ -579,7 +582,7 @@ const googleModels = [
   "gemini-2.0-pro-exp",
   "gemini-2.0-pro-exp-02-05",
   "gemini-2.5-pro-preview-06-05",
-  "gemini-2.5-pro"
+  "gemini-2.5-pro",
 ];
 
 const anthropicModels = [
@@ -662,6 +665,7 @@ const moonshotModels = [
 ];
 
 const iflytekModels = [
+  "image",
   "general",
   "generalv3",
   "pro-128k",

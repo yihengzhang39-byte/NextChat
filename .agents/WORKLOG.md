@@ -2,6 +2,119 @@
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+## 2026-07-01 - Iflytek image frontend SSE empty-event fix
+
+### Completed
+
+- Reviewed the latest Docker log: upstream WebSocket opened successfully, ten frames were received, final status was 2, and cumulative text length was nonzero.
+- Root cause moved to frontend SSE parsing: the client could receive an empty/comment SSE event from the initial heartbeat and attempted to parse it as JSON, surfacing `讯飞图像理解响应解析失败。` despite a successful server response.
+- Updated the Iflytek frontend stream handler to ignore empty SSE event data before JSON parsing.
+
+### Verification
+
+- `corepack yarn prettier --write app/client/platforms/iflytek.ts` passed.
+- `corepack yarn tsc --noEmit` passed.
+- Docker rebuild and browser retest are pending user action.
+## 2026-07-01 - Iflytek image Docker ws send fix
+
+### Completed
+
+- Diagnosed the latest browser error by reading Docker logs. The image request reached the server route, validated host/path/domain, and opened the upstream WebSocket successfully.
+- Root cause was a server-side `ws.send()` failure in the bundled Docker/Next standalone route: `TypeError: ...mask is not a function`, caused by the `ws` package trying to use an optional native buffer utility in the bundled runtime.
+- Disabled `ws` optional native buffer/UTF-8 validation modules before requiring `ws`, forcing the pure JavaScript fallback and avoiding the bundled `bufferutil` mask failure.
+
+### Verification
+
+- `corepack yarn prettier --write app/api/iflytek.ts` passed.
+- `corepack yarn tsc --noEmit` passed.
+- Docker rebuild and browser image upload retest are intentionally left for the user.
+## 2026-07-01 - Iflytek image empty-response fix
+
+### Completed
+
+- Aligned the server-side Iflytek image WebSocket payload with the verified Python request shape: `domain=imagev4`, `parameter.chat.stream=true`, image entries before the user question, pure base64 image content, and `content_meta.url=false` on image entries.
+- Changed the image stream response to flush an initial SSE comment immediately, forward each upstream text fragment as an OpenAI-compatible `choices[0].delta.content` SSE chunk, and send `[DONE]` on final status.
+- Added a dedicated 150-second frontend timeout for `image@Iflytek` while keeping ordinary text chat on the existing timeout behavior.
+- Added safe image-chain error handling so no-content failures, upstream errors, parse failures, timeouts, and WebSocket close/error paths surface as explicit Chinese errors instead of leaving an empty assistant message for refresh-time cleanup.
+- Added minimal server diagnostics keyed by request ID. Logs include endpoint host/path, domain, image counts and sizes, WebSocket open/first-frame timing, frame counts, status fields, and text lengths only.
+- Updated `.env.template` to document `IFLYTEK_IMAGE_MODEL=imagev4` for the verified image domain.
+
+### Verification
+
+- Ran `corepack yarn prettier --write app/api/iflytek.ts app/client/platforms/iflytek.ts app/constant.ts .env.template`; TypeScript files were formatted, then Prettier exited with code 2 because `.env.template` has no inferred parser.
+- `git diff --check` passed with Windows line-ending warnings only.
+- `corepack yarn tsc --noEmit` passed.
+- `npm.cmd run build` did not start because the npm prebuild step calls `yarn`, which is not on PATH in this shell.
+- `corepack yarn build` generated Prisma client and reached Next build, then failed on the existing Windows `EPERM: scandir C:\Users\ZYH\Application Data` permission issue.
+- Docker rebuild, container status, HTTP check, and browser image upload verification are intentionally left for the user per instruction.
+
+### Known Issues
+
+- Real webpage verification is pending user-run Docker and browser testing.
+- The existing ESLint `unused-imports` crash remains unrelated to this change.
+
+## 2026-07-01 - Iflytek image WebSocket integration
+
+### Completed
+
+- Created feature branch `feature/iflytek-image-websocket` from local `main` while preserving existing uncommitted work.
+- Added a Node runtime Iflytek API route so image understanding can use a server-side WebSocket client without exposing API Secret in the browser.
+- Added server-side HMAC-SHA256 signing for the image WebSocket handshake and converted OpenAI-style multimodal chat messages into the verified Iflytek `header` / `parameter.chat` / `payload.message.text` payload shape.
+- Converted upstream image WebSocket frames into OpenAI-compatible streaming SSE chunks for the existing frontend chat flow.
+- Kept the existing Iflytek HTTP proxy path for non-image text requests and kept Baidu provider code in place.
+- Added `image@Iflytek` to the product model allowlist and `image` to the Iflytek model list so the `.env` default model can be honored.
+- Updated `.env.template` and Docker Compose override to include the Iflytek image WebSocket environment field names. No real credential values were recorded.
+- Removed raw API-key value output from server config logging.
+
+### Verification
+
+- Per user instruction, Codex did not start Docker, run a local server, call the real image API, or execute build/test commands.
+- Read-only Docker Compose status check found Docker Desktop was not running on this machine at implementation time.
+- Handoff includes commands for the user to run local build, Docker deployment, and image end-to-end checks.
+
+### Known Issues
+
+- End-to-end image verification is pending user-run local testing.
+- The existing ESLint `unused-imports` crash remains a known toolchain issue unrelated to this change.
+- Old credentials used in earlier manual debugging should be rotated before production use.
+## 2026-07-01 - Iflytek image WebSocket API verification
+
+### Completed
+
+- Verified `spark-image-api-test.xf-yun.com` connectivity from the host:
+  DNS resolves, TCP 443 is reachable, and unauthenticated HTTPS requests reach
+  the Kong gateway with `401 Unauthorized`.
+- Confirmed the full image API path provided by Iflytek is
+  `/v2.1/image`.
+- Tested ordinary HTTPS/HTTP usage against
+  `https://spark-image-api-test.xf-yun.com/v2.1/image`:
+  unauthenticated requests return `401`, but signed HTTP POST requests return
+  `404`; this endpoint should not be integrated as a normal HTTP JSON API.
+- Tested the WebSocket endpoint
+  `wss://spark-image-api-test.xf-yun.com/v2.1/image` with HMAC-signed query
+  parameters. WebSocket handshake succeeded.
+- Sent the image chat payload shape with `header`, `parameter.chat`, and
+  `payload.message.text`. A 1x1 PNG test image produced an upstream
+  `10041 internal server error`, but a normal 64x64 PNG produced a successful
+  streamed response with `header.code = 0`.
+- Final working conclusion: image understanding must use WebSocket
+  `wss://spark-image-api-test.xf-yun.com/v2.1/image`, signed with
+  `GET /v2.1/image HTTP/1.1` in the HMAC request line, then send the JSON
+  request body after the socket opens.
+
+### Notes
+
+- Do not put the API secret directly in the `Authorization` header. For
+  WebSocket, build the canonical string:
+  `host: spark-image-api-test.xf-yun.com`, `date: <GMT date>`,
+  `GET /v2.1/image HTTP/1.1`; sign it with HMAC-SHA256, base64 the signature,
+  then base64 the authorization origin string and pass it as the URL
+  `authorization` query parameter.
+- Apifox should be configured as a WebSocket request, not an HTTP POST request.
+- The credentials used during manual testing were intentionally not recorded
+  here. Since they were pasted in chat during debugging, rotate them in the
+  Iflytek console before production use.
+
 ## 2026-06-30 - Remove startup loading logo screen
 
 ### Completed

@@ -2,6 +2,7 @@
 import {
   ApiPath,
   IFLYTEK_BASE_URL,
+  IFLYTEK_IMAGE_REQUEST_TIMEOUT_MS,
   Iflytek,
   REQUEST_TIMEOUT_MS,
 } from "@/app/constant";
@@ -22,6 +23,7 @@ import {
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
 import { getMessageTextContent, isVisionModel } from "@/app/utils";
+import { preProcessImageContent } from "@/app/utils/chat";
 import { fetch } from "@/app/utils/stream";
 
 import { RequestPayload } from "./openai";
@@ -68,7 +70,9 @@ export class SparkApi implements LLMApi {
     const messages: ChatOptions["messages"] = [];
     const visionModel = isVisionModel(options.config.model);
     for (const v of options.messages) {
-      const content = visionModel ? v.content : getMessageTextContent(v);
+      const content = visionModel
+        ? await preProcessImageContent(v.content)
+        : getMessageTextContent(v);
       messages.push({ role: v.role, content });
     }
 
@@ -93,14 +97,25 @@ export class SparkApi implements LLMApi {
       // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
     };
 
-    console.log("[Request] Spark payload: ", requestPayload);
+    console.log("[Request] Spark payload", {
+      model: requestPayload.model,
+      stream: requestPayload.stream,
+      messageCount: requestPayload.messages.length,
+    });
 
     const shouldStream = !!options.config.stream;
+    const isImageChat = modelConfig.model === "image";
+    const requestTimeoutMs = isImageChat
+      ? IFLYTEK_IMAGE_REQUEST_TIMEOUT_MS
+      : REQUEST_TIMEOUT_MS;
     const controller = new AbortController();
+    let clearRequestTimeout = () => {};
     options.onController?.(controller);
 
     try {
-      const chatPath = this.path(Iflytek.ChatPath);
+      const chatPath = this.path(
+        isImageChat ? Iflytek.ImageChatPath : Iflytek.ChatPath,
+      );
       const chatPayload = {
         method: "POST",
         body: JSON.stringify(requestPayload),
@@ -109,10 +124,12 @@ export class SparkApi implements LLMApi {
       };
 
       // Make a fetch request
-      const requestTimeoutId = setTimeout(
-        () => controller.abort(),
-        REQUEST_TIMEOUT_MS,
-      );
+      let requestTimedOut = false;
+      const requestTimeoutId = setTimeout(() => {
+        requestTimedOut = true;
+        controller.abort();
+      }, requestTimeoutMs);
+      clearRequestTimeout = () => clearTimeout(requestTimeoutId);
 
       if (shouldStream) {
         let responseText = "";
@@ -145,17 +162,38 @@ export class SparkApi implements LLMApi {
         const finish = () => {
           if (!finished) {
             finished = true;
+            clearRequestTimeout();
             options.onFinish(responseText + remainText, responseRes);
           }
         };
 
-        controller.signal.onabort = finish;
+        const fail = (message: string) => {
+          if (finished) return;
+          finished = true;
+          clearRequestTimeout();
+          const partialText = responseText + remainText;
+          if (partialText) {
+            options.onFinish(`${partialText}` + "\n\n" + message, responseRes);
+          } else {
+            options.onError?.(new Error(message));
+          }
+        };
+
+        controller.signal.onabort = () => {
+          if (requestTimedOut && isImageChat) {
+            fail("图片理解服务响应超时，请稍后重试。");
+            return;
+          }
+          finish();
+        };
 
         fetchEventSource(chatPath, {
           fetch: fetch as any,
           ...chatPayload,
           async onopen(res) {
-            clearTimeout(requestTimeoutId);
+            if (!isImageChat) {
+              clearRequestTimeout();
+            }
             const contentType = res.headers.get("content-type");
             console.log("[Spark] request response content type: ", contentType);
             responseRes = res;
@@ -191,12 +229,24 @@ export class SparkApi implements LLMApi {
             }
           },
           onmessage(msg) {
+            if (!msg.data?.trim()) {
+              return;
+            }
             if (msg.data === "[DONE]" || finished) {
               return finish();
             }
             const text = msg.data;
             try {
               const json = JSON.parse(text);
+              if (json?.error) {
+                fail(
+                  typeof json.message === "string"
+                    ? json.message
+                    : "图片请求未返回有效内容，请更换图片后重试。",
+                );
+                return;
+              }
+
               const choices = json.choices as Array<{
                 delta: { content: string };
               }>;
@@ -206,22 +256,39 @@ export class SparkApi implements LLMApi {
                 remainText += delta;
               }
             } catch (e) {
-              console.error("[Request] parse error", text);
-              options.onError?.(new Error(`Failed to parse response: ${text}`));
+              console.error("[Request] parse error");
+              if (isImageChat) {
+                fail("讯飞图像理解响应解析失败。");
+              } else {
+                options.onError?.(
+                  new Error(`Failed to parse response: ${text}`),
+                );
+              }
             }
           },
           onclose() {
             finish();
           },
           onerror(e) {
-            options.onError?.(e);
+            const message =
+              requestTimedOut && isImageChat
+                ? "图片理解服务响应超时，请稍后重试。"
+                : isImageChat
+                ? "图片理解服务暂时不可用，请稍后重试。"
+                : (e as Error).message;
+            if (isImageChat) {
+              fail(message);
+            } else {
+              clearRequestTimeout();
+              options.onError?.(e);
+            }
             throw e;
           },
           openWhenHidden: true,
         });
       } else {
         const res = await fetch(chatPath, chatPayload);
-        clearTimeout(requestTimeoutId);
+        clearRequestTimeout();
 
         if (!res.ok) {
           const errorText = await res.text();
@@ -237,6 +304,7 @@ export class SparkApi implements LLMApi {
       }
     } catch (e) {
       console.log("[Request] failed to make a chat request", e);
+      clearRequestTimeout?.();
       options.onError?.(e as Error);
     }
   }

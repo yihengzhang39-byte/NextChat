@@ -77,6 +77,9 @@ declare global {
       IFLYTEK_URL?: string;
       IFLYTEK_API_KEY?: string;
       IFLYTEK_API_SECRET?: string;
+      IFLYTEK_APP_ID?: string;
+      IFLYTEK_IMAGE_URL?: string;
+      IFLYTEK_IMAGE_MODEL?: string;
 
       DEEPSEEK_URL?: string;
       DEEPSEEK_API_KEY?: string;
@@ -127,7 +130,7 @@ function getApiKey(keys?: string) {
     console.log(
       `[Server Config] using ${randomIndex + 1} of ${
         apiKeys.length
-      } api key - ${apiKey}`,
+      } api key`,
     );
   }
 
@@ -235,6 +238,9 @@ export const getServerSideConfig = () => {
     iflytekUrl: process.env.IFLYTEK_URL,
     iflytekApiKey: process.env.IFLYTEK_API_KEY,
     iflytekApiSecret: process.env.IFLYTEK_API_SECRET,
+    iflytekAppId: process.env.IFLYTEK_APP_ID,
+    iflytekImageUrl: process.env.IFLYTEK_IMAGE_URL,
+    iflytekImageModel: process.env.IFLYTEK_IMAGE_MODEL,
 
     isDeepSeek,
     deepseekUrl: process.env.DEEPSEEK_URL,

@@ -17,7 +17,9 @@
 - [x] 替换占位协议和隐私政策内容（`public/docs/*.md`，源 docx 在仓库根目录）
 - [ ] **logo 源图升级**：当前 `星跃icon.png` 仅 43×40，大尺寸 PWA 图标（192/512）模糊，需 ≥512px 源图重新生成
 - [ ] 让容器启动时自动应用 Prisma 迁移（当前 Dockerfile CMD 只跑 `node server.js`，需手动 `migrate deploy`）
-- [ ] 获取讯飞星火最新模型 API Key，切回讯飞作为默认 provider
+- [x] 接入讯飞图像理解 WebSocket API（服务端签名代理，已对齐 imagev4 请求结构并修复空响应收尾）
+- [ ] 用户运行 Docker 重建并在真实网页上传图片验证 `image@Iflytek` 图片问答
+- [ ] 获取/确认讯飞文本聊天模型能力，再决定是否把普通文本默认链路从 Baidu 切到 Iflytek
 - [ ] 简化 UI：移除模型切换下拉框，隐藏 Settings 中的 Provider 选择（像 DeepSeek 网页端，只服务单一模型）
 - [ ] 配置阿里云短信凭证
 - [ ] 修复 ESLint pre-commit hook 的 `unused-imports` 规则 bug（`eslint-rule-composer` 版本兼容问题）
