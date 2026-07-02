@@ -46,12 +46,15 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: center;
   gap: 5px;
 
   &-end {
     display: flex;
+    align-items: center;
     margin-left: auto;
-    gap: 5px;
+    gap: 10px;
+    min-width: 0;
   }
 
   .chat-input-action {
@@ -632,14 +635,16 @@
 }
 
 .chat-input-ai-notice {
-  width: 100%;
-  box-sizing: border-box;
-  padding-right: 10px;
-  margin: -2px 0 6px;
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 50vw;
+  margin-bottom: 10px;
   color: color-mix(in srgb, var(--black) 42%, transparent);
   font-size: 12px;
   font-weight: normal;
-  line-height: 18px;
+  line-height: 24px;
   text-align: right;
   white-space: nowrap;
   overflow: hidden;

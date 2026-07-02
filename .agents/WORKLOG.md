@@ -450,3 +450,26 @@ use concrete dates.
 ### Verification
 
 - Per user instruction, did not run Docker, `yarn build`, `yarn lint`, `yarn test`, TypeScript checks, browser automation, screenshots, local development server, or runtime verification. Awaiting user local validation.
+
+## 2026-07-02 - Chat input notice toolbar alignment adjustment
+
+### Completed
+
+- Adjusted the “注：内容由AI生成” notice from its own row above the input box into the chat input toolbar row, aligned to the far right of the toolbar area to match the requested reference position.
+- Kept the existing muted gray text styling and did not change the notice color.
+- Main files changed: `app/components/chat.tsx` and `app/components/chat.module.scss`.
+
+### Verification
+
+- Per user instruction, did not run Docker, build, lint, tests, TypeScript checks, browser automation, screenshots, local development server, or runtime verification. Awaiting user local validation.
+## 2026-07-02 - Chat input notice vertical alignment tweak
+
+### Completed
+
+- Adjusted the “注：内容由AI生成” toolbar notice vertical alignment so it visually centers with the input toolbar buttons.
+- Matched the notice bottom spacing to the existing toolbar button spacing and kept the muted gray text color unchanged.
+- Main file changed: `app/components/chat.module.scss`.
+
+### Verification
+
+- Per user instruction, did not run Docker, build, lint, tests, TypeScript checks, browser automation, screenshots, local development server, or runtime verification. Awaiting user local validation.
