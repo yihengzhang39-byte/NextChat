@@ -2,6 +2,20 @@
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+
+## 2026-07-02 - Agent remote documentation update
+
+### Completed
+
+- Updated `AGENTS.md` so the documented `origin` remote matches the current
+  collaboration repository: `https://github.com/yihengzhang39-byte/NextChat.git`.
+- Confirmed `.agents/HANDOFF.md` already records the active collaboration
+  repository, so no handoff status update was needed.
+
+### Verification
+
+- Documentation-only change; no runtime verification required.
+
 ## 2026-07-02 - Iflytek imagev4 pure-text routing fix
 
 ### Completed
@@ -423,3 +437,16 @@ use concrete dates.
 
 - Get Baidu Secret Key → implement ernie5.0 support → verify chat.
 - Get Iflytek API key → switch back to Iflytek → simplify UI.
+
+## 2026-07-02 - Chat input AI-generated notice
+
+### Completed
+
+- 在聊天输入区域增加了“注：内容由AI生成”提示。
+- 提示放置在输入区工具栏下方、输入框上方的右侧，视觉上靠近发送按钮上方。
+- 使用灰色弱提示样式，复用 `var(--black)` 并通过 `color-mix` 降低视觉权重，不使用红色、警告色、背景色块、边框或图标。
+- 主要修改文件：`app/components/chat.tsx`、`app/components/chat.module.scss`、`app/locales/cn.ts`、`app/locales/en.ts`。
+
+### Verification
+
+- Per user instruction, did not run Docker, `yarn build`, `yarn lint`, `yarn test`, TypeScript checks, browser automation, screenshots, local development server, or runtime verification. Awaiting user local validation.

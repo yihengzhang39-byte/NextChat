@@ -85,6 +85,7 @@ const en: LocaleType = {
     },
     Rename: "Rename Chat",
     Typing: "Typing…",
+    AIGeneratedNotice: "注：内容由AI生成",
     Input: (submitKey: string) => {
       var inputHints = `${submitKey} to send`;
       if (submitKey === String(SubmitKey.Enter)) {

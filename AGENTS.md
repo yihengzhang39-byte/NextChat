@@ -21,7 +21,7 @@ This project is a fork of NextChat for secondary development.
 
 ## Git Remotes
 
-- `origin`: `https://github.com/ronvis7/iflytek_chat.git`
+- `origin`: `https://github.com/yihengzhang39-byte/NextChat.git`
 - `upstream`: `https://github.com/ChatGPTNextWeb/NextChat.git`
 
 Push product development changes to `origin`. Use `upstream` only to inspect or

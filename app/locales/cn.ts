@@ -84,6 +84,7 @@ const cn = {
     },
     Rename: "重命名对话",
     Typing: "正在输入…",
+    AIGeneratedNotice: "注：内容由AI生成",
     Input: (submitKey: string) => {
       var inputHints = `${submitKey} 发送`;
       if (submitKey === String(SubmitKey.Enter)) {

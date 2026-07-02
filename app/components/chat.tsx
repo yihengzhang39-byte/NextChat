@@ -2072,6 +2072,9 @@ function _Chat() {
                 setUserInput={setUserInput}
                 setShowChatSidePanel={setShowChatSidePanel}
               />
+              <div className={styles["chat-input-ai-notice"]}>
+                {Locale.Chat.AIGeneratedNotice}
+              </div>
               <label
                 className={clsx(styles["chat-input-panel-inner"], {
                   [styles["chat-input-panel-inner-attach"]]:
