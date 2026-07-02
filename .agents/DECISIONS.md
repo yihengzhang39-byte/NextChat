@@ -14,6 +14,7 @@ Authorization query parameters, or the signed upstream URL.
 ### Decision
 
 - Route `image@Iflytek` through a Node runtime server API route.
+- Decide whether to use imagev4 WebSocket by the selected model (`image@Iflytek`), not by whether the current message contains an image.
 - Generate the HMAC-SHA256 WebSocket signature only on the server.
 - Convert existing OpenAI-style multimodal frontend messages into Iflytek's
   image payload shape on the server.
@@ -25,6 +26,7 @@ Authorization query parameters, or the signed upstream URL.
 - Use a dedicated frontend timeout for `image@Iflytek` instead of changing the
   global text-chat timeout.
 - Keep Baidu and existing non-image Iflytek HTTP proxy behavior available.
+- Prefer `XF_APPID`, `XF_API_KEY`, `XF_API_SECRET`, `IFLYTEK_IMAGE_WS_HOST`, `IFLYTEK_IMAGE_WS_PATH`, and `IFLYTEK_IMAGE_MODEL=imagev4` for the imagev4 route; legacy Iflytek credential names remain compatibility fallbacks.
 
 ### Consequences
 

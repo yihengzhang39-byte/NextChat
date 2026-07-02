@@ -281,14 +281,18 @@ export function getMessageImages(message: RequestMessage): string[] {
 }
 
 export function isVisionModel(model: string) {
+  const modelName = model.split(/@(?!.*@)/)[0];
   const visionModels = useAccessStore.getState().visionModels;
   const envVisionModels = visionModels?.split(",").map((m) => m.trim());
-  if (envVisionModels?.includes(model)) {
+  if (
+    envVisionModels?.includes(model) ||
+    envVisionModels?.includes(modelName)
+  ) {
     return true;
   }
   return (
-    !EXCLUDE_VISION_MODEL_REGEXES.some((regex) => regex.test(model)) &&
-    VISION_MODEL_REGEXES.some((regex) => regex.test(model))
+    !EXCLUDE_VISION_MODEL_REGEXES.some((regex) => regex.test(modelName)) &&
+    VISION_MODEL_REGEXES.some((regex) => regex.test(modelName))
   );
 }
 

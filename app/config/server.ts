@@ -75,9 +75,14 @@ declare global {
 
       // iflytek only
       IFLYTEK_URL?: string;
+      XF_APPID?: string;
+      XF_API_KEY?: string;
+      XF_API_SECRET?: string;
       IFLYTEK_API_KEY?: string;
       IFLYTEK_API_SECRET?: string;
       IFLYTEK_APP_ID?: string;
+      IFLYTEK_IMAGE_WS_HOST?: string;
+      IFLYTEK_IMAGE_WS_PATH?: string;
       IFLYTEK_IMAGE_URL?: string;
       IFLYTEK_IMAGE_MODEL?: string;
 
@@ -128,9 +133,7 @@ function getApiKey(keys?: string) {
   const apiKey = apiKeys[randomIndex];
   if (apiKey) {
     console.log(
-      `[Server Config] using ${randomIndex + 1} of ${
-        apiKeys.length
-      } api key`,
+      `[Server Config] using ${randomIndex + 1} of ${apiKeys.length} api key`,
     );
   }
 
@@ -171,7 +174,7 @@ export const getServerSideConfig = () => {
   const isBytedance = !!process.env.BYTEDANCE_API_KEY;
   const isAlibaba = !!process.env.ALIBABA_API_KEY;
   const isMoonshot = !!process.env.MOONSHOT_API_KEY;
-  const isIflytek = !!process.env.IFLYTEK_API_KEY;
+  const isIflytek = !!(process.env.XF_API_KEY || process.env.IFLYTEK_API_KEY);
   const isDeepSeek = !!process.env.DEEPSEEK_API_KEY;
   const isXAI = !!process.env.XAI_API_KEY;
   const isChatGLM = !!process.env.CHATGLM_API_KEY;
@@ -236,9 +239,12 @@ export const getServerSideConfig = () => {
 
     isIflytek,
     iflytekUrl: process.env.IFLYTEK_URL,
-    iflytekApiKey: process.env.IFLYTEK_API_KEY,
-    iflytekApiSecret: process.env.IFLYTEK_API_SECRET,
-    iflytekAppId: process.env.IFLYTEK_APP_ID,
+    iflytekApiKey: process.env.XF_API_KEY || process.env.IFLYTEK_API_KEY,
+    iflytekApiSecret:
+      process.env.XF_API_SECRET || process.env.IFLYTEK_API_SECRET,
+    iflytekAppId: process.env.XF_APPID || process.env.IFLYTEK_APP_ID,
+    iflytekImageWsHost: process.env.IFLYTEK_IMAGE_WS_HOST,
+    iflytekImageWsPath: process.env.IFLYTEK_IMAGE_WS_PATH,
     iflytekImageUrl: process.env.IFLYTEK_IMAGE_URL,
     iflytekImageModel: process.env.IFLYTEK_IMAGE_MODEL,
 

@@ -104,7 +104,7 @@ export class SparkApi implements LLMApi {
     });
 
     const shouldStream = !!options.config.stream;
-    const isImageChat = modelConfig.model === "image";
+    const isImageChat = getIflytekBaseModel(modelConfig.model) === "image";
     const requestTimeoutMs = isImageChat
       ? IFLYTEK_IMAGE_REQUEST_TIMEOUT_MS
       : REQUEST_TIMEOUT_MS;
@@ -181,7 +181,7 @@ export class SparkApi implements LLMApi {
 
         controller.signal.onabort = () => {
           if (requestTimedOut && isImageChat) {
-            fail("图片理解服务响应超时，请稍后重试。");
+            fail("讯飞 imagev4 服务响应超时，请稍后重试。");
             return;
           }
           finish();
@@ -242,7 +242,7 @@ export class SparkApi implements LLMApi {
                 fail(
                   typeof json.message === "string"
                     ? json.message
-                    : "图片请求未返回有效内容，请更换图片后重试。",
+                    : "讯飞 imagev4 请求未返回有效内容，请稍后重试。",
                 );
                 return;
               }
@@ -272,9 +272,9 @@ export class SparkApi implements LLMApi {
           onerror(e) {
             const message =
               requestTimedOut && isImageChat
-                ? "图片理解服务响应超时，请稍后重试。"
+                ? "讯飞 imagev4 服务响应超时，请稍后重试。"
                 : isImageChat
-                ? "图片理解服务暂时不可用，请稍后重试。"
+                ? "讯飞 imagev4 服务暂时不可用，请稍后重试。"
                 : (e as Error).message;
             if (isImageChat) {
               fail(message);
@@ -319,4 +319,8 @@ export class SparkApi implements LLMApi {
   async models(): Promise<LLMModel[]> {
     return [];
   }
+}
+
+function getIflytekBaseModel(model: string) {
+  return model.split(/@(?!.*@)/)[0];
 }

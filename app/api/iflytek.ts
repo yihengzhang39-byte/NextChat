@@ -39,6 +39,7 @@ type OpenAIRequestPayload = {
   stream?: boolean;
   temperature?: number;
   top_p?: number;
+  max_tokens?: number;
 };
 
 type IflytekImageTextPart = {
@@ -284,7 +285,7 @@ function streamIflytekImage(
         .then((content) => {
           if (!content && !hasSentText) {
             enqueueRaw(
-              toSseErrorChunk("图片请求未返回有效内容，请更换图片后重试。"),
+              toSseErrorChunk("讯飞 imagev4 请求未返回有效内容，请稍后重试。"),
             );
           }
           enqueueRaw("data: [DONE]\n\n");
@@ -297,7 +298,7 @@ function streamIflytekImage(
           } else {
             enqueueRaw(
               toSseErrorChunk(
-                message || "图片理解服务暂时不可用，请稍后重试。",
+                message || "讯飞 imagev4 服务暂时不可用，请稍后重试。",
               ),
             );
           }
@@ -348,7 +349,7 @@ function runIflytekImageSocket(
         frameCount,
         hasText,
       });
-      finish(reject, new Error("图片理解服务响应超时，请稍后重试。"));
+      finish(reject, new Error("讯飞 imagev4 服务响应超时，请稍后重试。"));
     }, IFLYTEK_IMAGE_TIMEOUT_MS);
 
     const abort = () => {
@@ -356,7 +357,7 @@ function runIflytekImageSocket(
         frameCount,
         hasText,
       });
-      finish(reject, new Error("图片请求已取消。"));
+      finish(reject, new Error("讯飞 imagev4 请求已取消。"));
     };
 
     requestSignal.addEventListener("abort", abort, { once: true });
@@ -442,7 +443,7 @@ function runIflytekImageSocket(
           if (chunks.length === 0) {
             finish(
               reject,
-              new Error("图片请求未返回有效内容，请更换图片后重试。"),
+              new Error("讯飞 imagev4 请求未返回有效内容，请稍后重试。"),
             );
             return;
           }
@@ -462,7 +463,7 @@ function runIflytekImageSocket(
         frameCount,
         hasText,
       });
-      finish(reject, new Error("图片理解服务暂时不可用，请稍后重试。"));
+      finish(reject, new Error("讯飞 imagev4 服务暂时不可用，请稍后重试。"));
     });
 
     ws.on("close", () => {
@@ -478,7 +479,7 @@ function runIflytekImageSocket(
         } else {
           finish(
             reject,
-            new Error("图片请求未返回有效内容，请更换图片后重试。"),
+            new Error("讯飞 imagev4 请求未返回有效内容，请稍后重试。"),
           );
         }
       }
@@ -491,22 +492,35 @@ function buildIflytekImagePayload(
 ): IflytekImageBuildResult {
   const endpoint = getImageEndpoint();
   const { text, images } = buildIflytekImageText(payload.messages ?? []);
-  const domain = serverConfig.iflytekImageModel || payload.model || "imagev4";
+  const requestId = randomUUID();
+  const domain = getImageDomain();
 
   return {
-    requestId: randomUUID(),
+    requestId,
     domain,
     endpoint,
     images,
     payload: {
       header: {
         app_id: serverConfig.iflytekAppId,
+        uid: "web-chat-user",
+        debug: false,
       },
       parameter: {
         chat: {
           domain,
           stream: true,
           temperature: payload.temperature ?? 0.5,
+          top_k: 4,
+          max_tokens: payload.max_tokens ?? 1024,
+          auditing: "default",
+          auditing_debug: false,
+          auditing_input: false,
+          auditing_input_strategy: "",
+          auditing_output: false,
+          auditing_output_strategy: "",
+          chat_id: requestId,
+          mup: false,
         },
       },
       payload: {
@@ -521,27 +535,22 @@ function buildIflytekImagePayload(
 function buildIflytekImageText(messages: OpenAIMessage[]) {
   const imageParts: IflytekImageTextPart[] = [];
   const images: IflytekImageMetadata[] = [];
-  const questionParts: string[] = [];
-  const fallbackUserTexts: string[] = [];
+  const textParts: IflytekImageTextPart[] = [];
 
   for (const message of messages) {
-    const role = message.role === "assistant" ? "assistant" : "user";
+    const role = normalizeIflytekRole(message.role);
     const content = message.content;
 
     if (typeof content === "string") {
       const trimmed = content.trim();
-      if (trimmed && role === "user") {
-        fallbackUserTexts.push(trimmed);
+      if (trimmed) {
+        textParts.push({ role, content: trimmed });
       }
       continue;
     }
 
-    let messageHasImage = false;
-    const messageTexts: string[] = [];
-
     for (const part of content ?? []) {
       if (part.type === "image_url" && part.image_url?.url) {
-        messageHasImage = true;
         const image = parseImagePart(part.image_url.url);
         images.push(image.metadata);
         imageParts.push({
@@ -553,45 +562,48 @@ function buildIflytekImageText(messages: OpenAIMessage[]) {
           },
         });
       } else if (part.type === "text" && part.text?.trim()) {
-        messageTexts.push(part.text.trim());
+        textParts.push({ role, content: part.text.trim() });
       }
     }
+  }
 
-    if (role === "user") {
-      if (messageHasImage) {
-        questionParts.push(...messageTexts);
-      } else {
-        fallbackUserTexts.push(...messageTexts);
-      }
-    }
+  if (
+    imageParts.length > 0 &&
+    !textParts.some((part) => part.role === "user")
+  ) {
+    textParts.push({ role: "user", content: "请描述这张图片。" });
+  }
+
+  if (
+    textParts.length === 0 ||
+    !textParts.some((part) => part.role === "user")
+  ) {
+    throw new Error("请输入要发送给讯飞图像理解的问题。");
   }
 
   if (imageParts.length === 0) {
-    throw new Error(
-      "请先上传一张图片后再使用讯飞图像理解。尽量使用正常尺寸图片，不要使用 1x1 图片。",
-    );
+    return { images, text: textParts };
   }
 
-  const question =
-    questionParts.join("\n").trim() ||
-    fallbackUserTexts[fallbackUserTexts.length - 1] ||
-    "请描述这张图片。";
+  const lastUserIndex = findLastIndex(
+    textParts,
+    (part) => part.role === "user",
+  );
+  const insertAt = lastUserIndex >= 0 ? lastUserIndex : textParts.length;
 
   return {
     images,
     text: [
+      ...textParts.slice(0, insertAt),
       ...imageParts,
-      {
-        role: "user",
-        content: question,
-      },
+      ...textParts.slice(insertAt),
     ],
   };
 }
 
 function buildSignedImageUrl() {
-  const imageUrl = new URL(serverConfig.iflytekImageUrl as string);
-  const endpoint = getImageEndpoint(imageUrl);
+  const endpoint = getImageEndpoint();
+  const imageUrl = new URL(`wss://${endpoint.host}${endpoint.path}`);
   const date = new Date().toUTCString();
   const requestLine = `GET ${endpoint.path} HTTP/1.1`;
   const signatureOrigin = `host: ${endpoint.host}\ndate: ${date}\n${requestLine}`;
@@ -615,19 +627,30 @@ function buildSignedImageUrl() {
   return imageUrl.toString();
 }
 
-function getImageEndpoint(
-  url = new URL(serverConfig.iflytekImageUrl as string),
-) {
+function getImageEndpoint() {
+  const legacyUrl = serverConfig.iflytekImageUrl;
+  const hasSplitEndpoint =
+    !!serverConfig.iflytekImageWsHost || !!serverConfig.iflytekImageWsPath;
+  const legacyEndpoint =
+    legacyUrl && !hasSplitEndpoint ? getEndpointFromUrl(legacyUrl) : undefined;
   const endpoint = {
-    host: url.host,
-    path: url.pathname || IFLYTEK_IMAGE_PATH,
+    host:
+      normalizeImageHost(serverConfig.iflytekImageWsHost) ??
+      legacyEndpoint?.host ??
+      IFLYTEK_IMAGE_HOST,
+    path:
+      normalizeImagePath(serverConfig.iflytekImageWsPath) ??
+      legacyEndpoint?.path ??
+      IFLYTEK_IMAGE_PATH,
   };
 
   if (
     endpoint.host !== IFLYTEK_IMAGE_HOST ||
     endpoint.path !== IFLYTEK_IMAGE_PATH
   ) {
-    throw new Error("讯飞图像理解地址配置不正确，请检查 IFLYTEK_IMAGE_URL。");
+    throw new Error(
+      "讯飞图像理解地址配置不正确，请检查 IFLYTEK_IMAGE_WS_HOST 和 IFLYTEK_IMAGE_WS_PATH。",
+    );
   }
 
   return endpoint;
@@ -637,26 +660,76 @@ function isIflytekImageRequest(
   path: string,
   payload: OpenAIRequestPayload | undefined,
 ) {
-  const imageModel = serverConfig.iflytekImageModel || "image";
   return (
     path.includes(Iflytek.ImageChatPath) ||
-    payload?.model === "image" ||
-    payload?.model === imageModel
+    normalizeModelName(payload?.model) === "image"
   );
 }
 
 function getMissingImageEnvNames() {
   return [
-    ["IFLYTEK_API_KEY", serverConfig.iflytekApiKey],
-    ["IFLYTEK_API_SECRET", serverConfig.iflytekApiSecret],
-    ["IFLYTEK_APP_ID", serverConfig.iflytekAppId],
-    ["IFLYTEK_IMAGE_URL", serverConfig.iflytekImageUrl],
-    ["IFLYTEK_IMAGE_MODEL", serverConfig.iflytekImageModel],
+    ["XF_API_KEY", serverConfig.iflytekApiKey],
+    ["XF_API_SECRET", serverConfig.iflytekApiSecret],
+    ["XF_APPID", serverConfig.iflytekAppId],
   ]
     .filter(([, value]) => !value)
     .map(([name]) => name);
 }
+function getImageDomain() {
+  const domain = (serverConfig.iflytekImageModel || "imagev4").trim();
+  if (domain !== "imagev4") {
+    throw new Error(
+      "讯飞图像理解模型配置不正确，IFLYTEK_IMAGE_MODEL 必须为 imagev4。",
+    );
+  }
+  return domain;
+}
 
+function normalizeIflytekRole(role?: string) {
+  if (role === "system" || role === "assistant") {
+    return role;
+  }
+  return "user";
+}
+
+function normalizeModelName(model?: string) {
+  return (model ?? "").split(/@(?!.*@)/)[0];
+}
+
+function getEndpointFromUrl(url: string): IflytekImageEndpoint | undefined {
+  const raw = url.trim();
+  if (!raw) return undefined;
+  const parsed = new URL(raw.includes("://") ? raw : `wss://${raw}`);
+  return {
+    host: parsed.host,
+    path: parsed.pathname || IFLYTEK_IMAGE_PATH,
+  };
+}
+
+function normalizeImageHost(host?: string) {
+  const raw = host?.trim();
+  if (!raw) return undefined;
+  if (raw.includes("://")) {
+    return new URL(raw).host;
+  }
+  return raw.split("/")[0];
+}
+
+function normalizeImagePath(path?: string) {
+  const raw = path?.trim();
+  if (!raw) return undefined;
+  if (raw.includes("://")) {
+    return new URL(raw).pathname || IFLYTEK_IMAGE_PATH;
+  }
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
+function findLastIndex<T>(items: T[], predicate: (item: T) => boolean) {
+  for (let i = items.length - 1; i >= 0; i -= 1) {
+    if (predicate(items[i])) return i;
+  }
+  return -1;
+}
 function parseJsonBody(body: string): OpenAIRequestPayload | undefined {
   try {
     return JSON.parse(body);

@@ -2,6 +2,22 @@
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+## 2026-07-02 - Iflytek imagev4 pure-text routing fix
+
+### Completed
+
+- Root cause: the frontend only treated the bare `image` model as the Iflytek image route, so a selected `image@Iflytek` pure-text request could fall through to the ordinary Iflytek HTTP chat path. The server payload builder also rejected imagev4 requests when no image part was present.
+- Changed the routing rule so the normalized selected model `image` / `image@Iflytek` always uses the server-side imagev4 WebSocket proxy, independent of whether the current message contains an image.
+- Updated the imagev4 payload builder so pure text and image + text reuse the same WebSocket chain. Pure text sends non-empty text messages directly; image + text keeps base64 image entries with `content_meta.url=false` and inserts them before the final user question.
+- Unified imagev4 configuration around `XF_APPID`, `XF_API_KEY`, `XF_API_SECRET`, `IFLYTEK_IMAGE_WS_HOST`, `IFLYTEK_IMAGE_WS_PATH`, and `IFLYTEK_IMAGE_MODEL=imagev4`, with Docker Compose passing the same fields into app containers.
+- Main files changed: `app/client/platforms/iflytek.ts`, `app/api/iflytek.ts`, `app/config/server.ts`, `app/utils.ts`, `.env.template`, and `docker-compose.override.yml`.
+
+### Verification
+
+- Ran Prettier on touched TypeScript files only.
+- `git diff --check` on touched files passed with line-ending warnings only.
+- Per user instruction, did not run Docker, `yarn build`, `yarn lint`, `yarn test`, TypeScript checks, browser verification, or real Iflytek API requests. Awaiting user local validation.
+
 ## 2026-07-01 - Iflytek image frontend SSE empty-event fix
 
 ### Completed

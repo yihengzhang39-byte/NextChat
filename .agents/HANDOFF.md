@@ -2,6 +2,13 @@
 
 ## Current Status
 
+**2026-07-02 update:**
+
+- `image@Iflytek` routing is now model-driven instead of image-presence-driven. Pure text and image + text both go through the server-side imagev4 WebSocket proxy with `domain=imagev4`.
+- The imagev4 payload builder now accepts pure-text requests, preserves non-empty system/user/assistant text history, and inserts image base64 parts before the final user question when images are present.
+- Configuration now prefers `XF_APPID`, `XF_API_KEY`, `XF_API_SECRET`, `IFLYTEK_IMAGE_WS_HOST`, `IFLYTEK_IMAGE_WS_PATH`, and `IFLYTEK_IMAGE_MODEL=imagev4`; Docker Compose injects those names into both app services.
+- Verification remains pending user action. Per instruction, Codex did not run Docker, build, lint, tests, TypeScript checks, browser verification, or real Iflytek API calls for this fix.
+
 **2026-07-01 - current feature branch:** `feature/iflytek-image-websocket`
 
 - Iflytek image understanding is wired through a server-side Node WebSocket
