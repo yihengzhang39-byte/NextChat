@@ -1,7 +1,141 @@
-# Worklog
+﻿# Worklog
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+
+## 2026-07-03 - Iflytek image+text Excel batch QA script
+
+### Completed
+
+- Read all current `.agents` files before implementation: `.agents/DEVELOPMENT.md`, `.agents/HANDOFF.md`, `.agents/DECISIONS.md`, `.agents/TODO.md`, `.agents/WORKLOG.md`, and `.agents/imagev4_text_success_flow.md`.
+- Confirmed the current image+text path is `image@Iflytek` routed through the local backend route `/api/iflytek/v1/chat/completions` into the server-side `imagev4` WebSocket proxy.
+- Confirmed the real upstream protocol remains the verified `wss://spark-image-api-test.xf-yun.com/v2.1/image` WebSocket flow with HMAC-SHA256 server-side signing, `domain=imagev4`, `stream=true`, and `payload.message.text`.
+- Confirmed image handling from current code: `app/client/platforms/iflytek.ts` sends OpenAI-style multimodal `image_url` parts after `preProcessImageContent`; `app/api/iflytek.ts` strips data URL prefixes, sends pure base64 image entries with `content_type=image` and `content_meta.url=false`, inserts image entries before the final user text, and extracts streamed text from `payload.choices.text[*].content` until final status.
+- Added `scripts/batch_eval_iflytek_image_text.py`, a standalone Excel batch test script for image + text prompts. It calls the existing local backend route, so the current route continues to own Iflytek auth/signing, request payload construction, WebSocket handling, SSE conversion, and response parsing.
+- Excel mapping rules implemented:
+
+```text
+读取 D 列图片路径；
+读取 E 列提示词；
+不读取 F 列作为输入；
+G1 写入“回复”；
+最终模型回复写入同一行 G 列；
+例如：D2 + E2 → G2，D3 + E3 → G3。
+```
+
+- Image path rules implemented: default `--image-root` is `D:\test_datamodel\datas\data`; D-column relative paths such as `imgs\A5a0.png` or `imgs/A5a0.png` resolve as `image_root / relative_path`; absolute D-column paths are used directly; surrounding whitespace and quotes are stripped before resolution.
+- Missing image paths, empty prompts, unsupported image extensions, and failed image reads are recorded as row-level failures and are not sent to Iflytek.
+- Each row is an independent single-turn multimodal request. The script sends only the current row's image data URL and prompt in one `messages` item, with no `sessionId`, `chatId`, `conversationId`, memory, previous Excel row, or chat-store history.
+- Default concurrency is `3`, controlled with `asyncio.Semaphore`. Each task carries its original Excel row number, and results are written back by `row -> result`, never by response completion order.
+- Added status metadata with `status`, `latency_seconds`, and `error`. The script uses `H/I/J` when they are empty or already contain those metadata headers; if they contain business data, it appends the metadata columns after the current last used column.
+- Recommended real-run command:
+
+```powershell
+python scripts\batch_eval_iflytek_image_text.py `
+  --input "D:\test_datamodel\datas\questions.xlsx" `
+  --output "D:\test_datamodel\datas\questions_with_replies.xlsx" `
+  --sheet "Sheet1" `
+  --image-root "D:\test_datamodel\datas\data" `
+  --image-column "D" `
+  --prompt-column "E" `
+  --reply-column "G" `
+  --concurrency 3
+```
+
+### Verification
+
+- Did not execute any real model request or backend request.
+- `python scripts\batch_eval_iflytek_image_text.py --help` passed.
+- Python AST syntax parse passed.
+- `python -m py_compile scripts\batch_eval_iflytek_image_text.py` passed.
+- Created a temporary fake workbook and PNG, then ran `--dry-run`; verified: D relative path resolution through `--image-root`, G1/G-row reply mapping, same-row status/error writes, missing-image failure, empty-prompt failure, existing G reply skip behavior, preservation of F reference-answer column, preservation of another worksheet, and automatic metadata-column append when H is occupied by business data.
+
+### User Verification Needed
+
+- Start the local NextChat backend with valid Iflytek environment variables.
+- Run the script without `--dry-run` against a small non-sensitive workbook.
+- Confirm every requested row reads only D/E, never sends F as input, and writes the final model text to the same-row G cell.
+- Confirm backend logs show the existing imagev4 route and do not expose credentials, signed URLs, image base64, full prompts, or full answers.
+
+## 2026-07-03 - Iflytek Excel batch QA script
+
+### Completed
+
+- Read all current `.agents` files before implementation:
+  `.agents/DEVELOPMENT.md`, `.agents/HANDOFF.md`,
+  `.agents/DECISIONS.md`, `.agents/TODO.md`, `.agents/WORKLOG.md`, and
+  `.agents/imagev4_text_success_flow.md`.
+- Confirmed the current successful Iflytek model path is `image@Iflytek`
+  routed to `imagev4` through the server-side WebSocket proxy, not a normal
+  browser-side HTTP/SSE direct Iflytek call.
+- Confirmed the real upstream protocol and request details:
+  `wss://spark-image-api-test.xf-yun.com/v2.1/image`, HMAC-SHA256 signed
+  WebSocket query, `domain=imagev4`, `stream=true`,
+  `payload.message.text`, and per-request `chat_id`.
+- Confirmed the backend converts upstream WebSocket frames into
+  OpenAI-compatible SSE chunks and extracts model text from
+  `payload.choices.text[*].content` until `header.status == 2` or
+  `payload.choices.status == 2`.
+- Confirmed the verified successful call chain documented locally:
+  `imagev4` pure text via WebSocket using host
+  `spark-image-api-test.xf-yun.com`, path `/v2.1/image`, matching AppID/API
+  key/API secret, and `domain=imagev4`.
+- Added `scripts/batch_eval_iflytek.py`, a standalone Excel batch test script
+  that calls the existing local backend route
+  `/api/iflytek/v1/chat/completions` with `model=image@Iflytek`, so the
+  existing route continues to handle Iflytek auth/signing, request payload
+  construction, WebSocket handling, SSE conversion, and response parsing.
+- The script keeps each Excel row as an independent single-turn request:
+  `messages` contains only the current row's user question, with no
+  `sessionId`, `chatId`, `conversationId`, local memory, previous Excel rows,
+  chat-store history, or historical `messages` array.
+- Excel mapping rules implemented exactly:
+
+```text
+从 E2 开始读取问题；
+F1 写入“回复”；
+每行回答写入同一行 F 列；
+E2 → F2，E3 → F3，依此类推。
+```
+
+- Added status columns without changing the E/F adjacency:
+  `G1=status`, `H1=latency_seconds`, `I1=error`.
+- Default concurrency is `5`, controlled with `asyncio.Semaphore`.
+  Each task carries its original Excel row number and results are written back
+  by `row -> result`, never by completion order.
+- The script supports `--input`, `--output`, `--sheet`, `--concurrency`,
+  `--force`, `--timeout`, `--retries`, `--start-row`, `--question-column`,
+  and `--reply-column`, plus safe local `--dry-run` verification.
+- Recommended real-run command:
+
+```powershell
+python scripts\batch_eval_iflytek.py `
+  --input "D:\path\questions.xlsx" `
+  --output "D:\path\questions_with_replies.xlsx" `
+  --sheet "Sheet1" `
+  --concurrency 5
+```
+
+### Verification
+
+- Did not execute any real model request or backend request.
+- `python scripts\batch_eval_iflytek.py --help` passed.
+- `openpyxl` import check passed locally (`3.1.5`).
+- Python AST syntax parse passed. `py_compile` was not used after the Windows
+  sandbox denied bytecode cache writes.
+- Created a temporary fake workbook and ran `--dry-run`; verified:
+  `F1/G1/H1/I1` headers, `E2 -> F2`, `E4 -> F4`, existing `F3` skipped,
+  and the extra worksheet was preserved. Temporary test files were removed.
+
+### User Verification Needed
+
+- Start the local NextChat backend with valid Iflytek environment variables.
+- Run the script without `--dry-run` against a small non-sensitive workbook.
+- Confirm the backend logs show the existing Iflytek imagev4 route and no
+  credentials, signed URLs, image base64, full prompts, or full answers are
+  exposed.
+- Spot-check that every non-empty E-row gets its same-row F reply and skipped
+  rows are not re-requested unless `--force` is used.
 
 ## 2026-07-02 - Agent remote documentation update
 
@@ -473,3 +607,24 @@ use concrete dates.
 ### Verification
 
 - Per user instruction, did not run Docker, build, lint, tests, TypeScript checks, browser automation, screenshots, local development server, or runtime verification. Awaiting user local validation.
+## 2026-07-06 - Iflytek image-only Excel batch QA script
+
+### Completed
+
+- Added `scripts/batch_eval_iflytek_image_only.py`, a standalone Excel batch script for image-only Iflytek evaluation through the existing local `/api/iflytek/v1/chat/completions` route.
+- Default Excel mapping: read image paths from `C`, write replies to `D`, and write `status`, `latency_seconds`, and `error` to `E/F/G` when available.
+- Added path remapping for old Excel paths: the script prefers the configured `--image-root`, takes the C-column file name/stem, and tries same-stem `.jpg`, `.jpeg`, `.png`, and `.webp` files. This covers rows such as old `A1a01.png` paths resolving to actual `A1a01.jpg` files under `D:\test_datamodel\图生文\图生文\图片`.
+- No prompt column is read. The script sends each image with a default fixed instruction, configurable through `--prompt`; each row remains an independent single-turn multimodal request.
+
+### Verification
+
+- `python .\scripts\batch_eval_iflytek_image_only.py --help` passed.
+- `python -m py_compile .\scripts\batch_eval_iflytek_image_only.py` passed.
+- Created a temporary workbook with C2 set to an old absolute `.png` path and a real same-stem `.jpg` under a test `--image-root`; `--dry-run` resolved the `.jpg`, wrote `[dry-run] A1a01.jpg` to D2, and marked E2 as `success`.
+- Did not execute real backend or model requests.
+
+### User Verification Needed
+
+- Start the local NextChat backend with valid Iflytek credentials.
+- Run the image-only script on a small workbook and spot-check that C-column old paths map to the real image directory and that replies land in the intended reply column.
+

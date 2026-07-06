@@ -3,6 +3,66 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-03: Image+Text Excel Batch Reuses Local Iflytek Backend Route
+
+### Context
+
+The image+text Excel batch evaluator must exercise the verified imagev4 path
+without copying the upstream WebSocket signing, image payload conversion, or SSE
+parsing logic into a second implementation.
+
+### Decision
+
+- Implement image+text batch evaluation as a separate Python script under
+  `scripts/`.
+- Have the script call `/api/iflytek/v1/chat/completions` with
+  `model=image@Iflytek` and one OpenAI-style multimodal user message per Excel
+  row.
+- Encode the local image file as a data URL in the script, then let the existing
+  server route strip the data URL prefix and send pure base64 image content to
+  imagev4 with `content_meta.url=false`.
+- Keep each row stateless: only the current D-column image and E-column prompt
+  are sent; F-column reference answers, prior rows, chat sessions, memory, and
+  browser UI state are excluded.
+
+### Consequences
+
+- The batch script requires a locally running NextChat backend for real model
+  calls.
+- Iflytek credentials, HMAC signing, upstream WebSocket handling, final-frame
+  detection, and text extraction remain centralized in `app/api/iflytek.ts`.
+- The script can validate Excel path mapping and row writes with `--dry-run`
+  without sending real model traffic.
+
+## 2026-07-03: Excel Batch QA Reuses Local Iflytek Backend Route
+
+### Context
+
+The Excel batch evaluator must exercise the currently verified Iflytek path
+without duplicating or guessing the upstream WebSocket API format.
+
+### Decision
+
+- Implement the batch evaluator as a standalone Python script under `scripts/`.
+- Have the script call the local NextChat backend route
+  `/api/iflytek/v1/chat/completions` with `model=image@Iflytek`.
+- Keep each Excel row as a stateless single-turn request with only the current
+  row's question in `messages`.
+- Let the existing server route continue to own Iflytek credentials, HMAC
+  signing, `imagev4` payload shape, upstream WebSocket handling, SSE conversion,
+  and text extraction.
+- Do not route the batch flow through browser UI automation or the frontend chat
+  store.
+
+### Consequences
+
+- The batch script avoids a second, potentially divergent Iflytek integration.
+- The script requires a locally running NextChat backend for real model calls.
+- Excel concurrency is controlled in the script, while upstream request details
+  remain centralized in `app/api/iflytek.ts`.
+- Row isolation is explicit: no chat-session history, memory prompt,
+  summarization state, or previous Excel row can enter the request payload.
+
 ## 2026-07-01: Iflytek Image Understanding via Server WebSocket Proxy
 
 ### Context
@@ -138,3 +198,22 @@ behave like the DeepSeek web client: one model, no provider choice.
 - Temporarily, Baidu will be the default provider for integration testing.
 - **2026-06-26 update**: Baidu v2 integration complete and verified.
 - When Iflytek credentials arrive, swap `DEFAULT_MODEL` and provider back.
+
+## 2026-07-06: Image-Only Excel Batch Maps Old Paths by File Stem
+
+### Context
+
+Some image-only Excel workbooks contain stale absolute C-column paths whose directory and extension do not match the local files used for testing.
+
+### Decision
+
+- Add a separate `scripts/batch_eval_iflytek_image_only.py` script instead of changing the existing image+text batch flow.
+- Resolve each C-column path by preferring the configured `--image-root` and trying the original file name plus same-stem `.jpg`, `.jpeg`, `.png`, and `.webp` candidates.
+- Continue calling the existing local Iflytek backend route with `model=image@Iflytek`, so credentials, WebSocket signing, image payload conversion, and SSE parsing remain centralized in the app.
+- Do not read a prompt column; send a configurable fixed instruction with each image by default.
+
+### Consequences
+
+- Old rows such as `A1a01.png` can resolve to actual local files such as `A1a01.jpg` when both share the same stem.
+- Real model calls still require a running local NextChat backend with valid Iflytek environment variables.
+- The image-only flow remains isolated from the existing pure-text and image+text batch scripts.

@@ -1,6 +1,45 @@
-# Handoff
+﻿# Handoff
 
 ## Current Status
+
+**2026-07-03 update:**
+
+- Added `scripts/batch_eval_iflytek_image_text.py`, a standalone Excel batch QA
+  script for independent image + text prompts using `image@Iflytek` / `imagev4`.
+- Image+text Excel rules: read image paths from D, prompts from E, preserve F as
+  reference-answer data that is never sent as input, write `G1=回复`, and write
+  each model answer back to the same row in G.
+- Image path resolution defaults to `D:\test_datamodel\datas\data`; relative D
+  values such as `imgs\A5a0.png` or `imgs/A5a0.png` are resolved as
+  `image_root / relative_path`, while absolute paths are used directly.
+- The image+text script calls `/api/iflytek/v1/chat/completions` with an
+  OpenAI-style multimodal message containing the current row's image data URL
+  and prompt only, so the existing backend continues to own imagev4 WebSocket
+  signing, base64 extraction, SSE conversion, and response parsing.
+- Verification performed without real model traffic: help output, AST syntax
+  parse, `py_compile`, and a `--dry-run` workbook test covering relative image
+  paths, missing images, empty prompts, skipped existing G replies, status-column
+  append when H/I/J are occupied, and preservation of F/other worksheets.
+- Real image+text validation is still pending user action: start the local
+  backend with valid credentials and run the new script without `--dry-run` on a
+  small non-sensitive workbook.
+- Added `scripts/batch_eval_iflytek.py`, a standalone Excel batch QA script for
+  `image@Iflytek` / `imagev4`.
+- The script calls the existing local backend route
+  `/api/iflytek/v1/chat/completions` with `model=image@Iflytek`, so the current
+  server route continues to own Iflytek WebSocket signing, payload construction,
+  SSE conversion, and response parsing.
+- Excel rules: read questions from `E2` down, write `F1=回复`, write every answer
+  back to the same row in column F, and add `G/H/I` status metadata columns.
+- Each row is sent as an independent single-turn `messages` array containing
+  only that row's user question. It bypasses the chat store, session memory,
+  previous messages, and title/summarization flows.
+- Verification performed without model traffic: help output, AST syntax parse,
+  `openpyxl` import check, and a `--dry-run` workbook test confirming row
+  mapping, skip behavior, and preservation of another worksheet.
+- Real Iflytek validation is still pending user action: start the local backend
+  with valid credentials and run the script without `--dry-run` on a small
+  non-sensitive workbook.
 
 **2026-07-02 update:**
 
@@ -179,3 +218,12 @@ http://localhost:3000
 3. Replace placeholder agreement and privacy policy content before production.
 4. Configure Aliyun SMS credentials in `.env`.
 5. Fix ESLint pre-commit hook crash.
+
+**2026-07-06 update:**
+
+- Added `scripts/batch_eval_iflytek_image_only.py` for image-only Excel batch evaluation.
+- Defaults: read image paths from `C`, write replies to `D`, and use `E/F/G` for `status`, `latency_seconds`, and `error` when those columns are free.
+- The script remaps stale Excel paths by taking the C-column file name/stem and searching the configured `--image-root` for same-stem `.jpg`, `.jpeg`, `.png`, or `.webp` files. Default real image directory is `D:\test_datamodel\图生文\图生文\图片`.
+- No prompt column is read; a fixed default image-description instruction is sent with each image unless overridden by `--prompt`.
+- Verification so far: help output, Python bytecode compilation, and a local `--dry-run` path-remapping check passed; no real backend/model call was executed.
+
