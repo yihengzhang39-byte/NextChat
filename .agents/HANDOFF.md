@@ -2,6 +2,15 @@
 
 ## Current Status
 
+**2026-07-06 update - imagev4 audit/business error passthrough:**
+
+- The imagev4 WebSocket route now preserves upstream non-zero business errors instead of collapsing them to `讯飞图像理解返回错误（code xxx）。`.
+- For upstream frames with `header.code != 0`, callers receive `服务端业务错误：code=<code>, message=<header.message>, sid=<header.sid>` when those fields are present. The full upstream `header.message`, including Chinese audit text and line breaks, is kept intact.
+- If `header.message` is missing, empty, or not a string, the response still includes `服务端业务错误：code=<code>` and includes `sid` only when it is a non-empty string; the old generic imagev4 error text is only appended as fallback context.
+- The browser frontend already reads SSE `error.message`; the Excel batch scripts now also avoid truncating JSON HTTP error messages to 500 characters. All batch scripts continue to call only the local `/api/iflytek/v1/chat/completions` route.
+- Success path and request construction are unchanged: `domain=imagev4`, WebSocket signing, image base64 handling, streamed text chunks, and final status handling remain in `app/api/iflytek.ts`.
+- User verification still required: test a known audit-blocked image in the webpage and in `scripts/batch_eval_iflytek_image_only.py`; confirm the webpage still receives upstream code/message/sid, while the image-only Excel script writes only the cleaned apology text beginning with `非常抱歉` to column D and the row error cell. Logs must not expose credentials, signed URLs, image base64, full prompts, or full normal answers.
+
 **2026-07-03 update:**
 
 - Added `scripts/batch_eval_iflytek_image_text.py`, a standalone Excel batch QA

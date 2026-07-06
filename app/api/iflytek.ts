@@ -404,21 +404,28 @@ function runIflytekImageSocket(
           firstFrameMs = Date.now() - startedAt;
         }
 
-        const code = Number(message?.header?.code ?? 0);
-        const headerStatus = Number(message?.header?.status);
+        const header = message?.header ?? {};
+        const code = Number(header?.code ?? 0);
+        const headerStatus = Number(header?.status);
         const choicesStatus = Number(message?.payload?.choices?.status);
         if (!Number.isNaN(headerStatus)) finalHeaderStatus = headerStatus;
         if (!Number.isNaN(choicesStatus)) finalChoicesStatus = choicesStatus;
 
         if (code !== 0) {
+          const upstreamErrorMessage = formatIflytekImageBusinessError(
+            header,
+            code,
+          );
           logImageEvent(imageRequest.requestId, "upstream-error", {
             frameCount,
             firstFrameMs,
             headerCode: code,
             headerStatus: finalHeaderStatus,
             choicesStatus: finalChoicesStatus,
+            hasUpstreamMessage: hasNonEmptyString(header?.message),
+            hasSid: hasNonEmptyString(header?.sid),
           });
-          finish(reject, new Error(`讯飞图像理解返回错误（code ${code}）。`));
+          finish(reject, new Error(upstreamErrorMessage));
           return;
         }
 
@@ -791,6 +798,38 @@ function stripDataUrlPrefix(url: string) {
   const marker = "base64,";
   const index = url.indexOf(marker);
   return index >= 0 ? url.slice(index + marker.length) : url;
+}
+
+function hasNonEmptyString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function formatIflytekImageBusinessError(
+  header: Record<string, unknown>,
+  fallbackCode: number,
+) {
+  const rawCode = header?.code;
+  const code =
+    typeof rawCode === "string" || typeof rawCode === "number"
+      ? String(rawCode)
+      : String(fallbackCode);
+  const message = hasNonEmptyString(header?.message)
+    ? String(header.message)
+    : "";
+  const sid = hasNonEmptyString(header?.sid) ? String(header.sid) : "";
+  const parts = [`服务端业务错误：code=${code}`];
+
+  if (message) {
+    parts.push(`message=${message}`);
+  }
+  if (sid) {
+    parts.push(`sid=${sid}`);
+  }
+  if (!message) {
+    parts.push(`讯飞图像理解返回错误（code ${code}）。`);
+  }
+
+  return parts.join(", ");
 }
 
 function toSseChunk(content: string) {

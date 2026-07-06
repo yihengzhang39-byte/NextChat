@@ -3,6 +3,41 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-06 - Iflytek image-only audit message Excel display
+
+### Completed
+
+- Updated `scripts/batch_eval_iflytek_image_only.py` so imagev4 audit-block errors are cleaned for Excel display.
+- For upstream `AuditImageBlockError` text, the script now strips local/technical prefixes such as `服务端业务错误：code=...`, `message=`, `AuditImageBlockError:(time)`, and trailing `sid`, preserving only the user-facing message beginning with `非常抱歉`.
+- For this audit-block case, the cleaned message is written to the D-column `回复` cell as well as the row `error` metadata cell; other failures continue to use the normal error column behavior.
+
+### Verification
+
+- Per user instruction, did not run Docker, call the real Iflytek API, run browser tests, run lint/build/test/tsc, or execute local validation commands.
+- Static diff review only.
+
+## 2026-07-06 - Iflytek imagev4 audit/business error passthrough
+
+### Completed
+
+- Read all requested project records before implementation: `.agents/DEVELOPMENT.md`, `.agents/HANDOFF.md`, `.agents/DECISIONS.md`, `.agents/TODO.md`, `.agents/WORKLOG.md`, and `.agents/imagev4_text_success_flow.md`.
+- Located the imagev4 upstream WebSocket frame handling in `app/api/iflytek.ts`, specifically the `header.code != 0` branch inside `runIflytekImageSocket`.
+- Changed non-zero upstream imagev4 business errors to return a caller-facing message that preserves `header.code`, full string `header.message`, and non-empty string `header.sid` in the format `服务端业务错误：code=<code>, message=<message>, sid=<sid>`.
+- Added fallbacks so missing or non-string `header.message` still returns `服务端业务错误：code=<code>` plus `sid` when present, without emitting literal `undefined`, `null`, or an empty sid.
+- Kept successful streaming behavior unchanged: `header.code === 0` text extraction, SSE chunk format, `[DONE]`, final `header.status == 2` / `choices.status == 2` handling, WebSocket signing, image base64 handling, and `domain=imagev4` payload construction were not refactored.
+- Updated the pure-text, image+text, and image-only Excel batch scripts so HTTP error responses parse JSON `message` before falling back to raw body text, avoiding the old 500-character truncation path for long audit messages. Their normal SSE error parsing already preserved `event.message`.
+- Did not add logs containing credentials, HMAC signatures, Authorization query parameters, signed URLs, image base64, full prompts, or full normal model answers.
+
+### Verification
+
+- Per user instruction, did not start Docker, call the real Iflytek API, run browser tests, run lint/build/test/tsc, or execute local validation commands.
+- Static diff review only.
+
+### User Verification Needed
+
+- Start the local NextChat backend with valid Iflytek credentials.
+- Run the image-only Excel script against a small workbook containing a known audit-blocked image and confirm the row error cell shows the full upstream `AuditImageBlockError` message plus `sid`.
+
 ## 2026-07-03 - Iflytek image+text Excel batch QA script
 
 ### Completed

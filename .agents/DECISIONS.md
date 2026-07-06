@@ -3,6 +3,25 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-06: Preserve imagev4 Upstream Business Error Details
+
+### Context
+
+Iflytek imagev4 can return non-zero business/audit errors in WebSocket frames with useful `header.code`, `header.message`, and `header.sid` fields. Collapsing these to a generic local code-only error hides the real audit reason from the browser and Excel batch evaluators.
+
+### Decision
+
+- For imagev4 WebSocket frames where `header.code != 0`, preserve upstream `header.code`, full string `header.message`, and non-empty string `header.sid` in the caller-facing error text.
+- Use the stable format `服务端业务错误：code=<code>, message=<message>, sid=<sid>` when all fields are present.
+- Omit missing/empty/non-string `message` or `sid` rather than outputting `undefined`, `null`, or an empty sid. Only when upstream message is unavailable may the older generic imagev4 error text be appended as fallback context.
+- Do not log the full upstream audit message by default; logs remain limited to request IDs, statuses, counts, timings, and boolean presence flags.
+
+### Consequences
+
+- Browser users and Excel batch rows can see actionable audit/business failure text from Iflytek, including `AuditImageBlockError` guidance and `sid` for support correlation.
+- The imagev4 integration remains centralized in `app/api/iflytek.ts`; batch scripts do not copy WebSocket signing or image payload logic.
+- Security rules remain unchanged: credentials, HMAC signatures, Authorization query data, signed URLs, image base64, full prompts, and full normal answers must not be logged or documented.
+
 ## 2026-07-03: Image+Text Excel Batch Reuses Local Iflytek Backend Route
 
 ### Context
