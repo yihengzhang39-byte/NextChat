@@ -15,6 +15,7 @@ import base64
 import json
 import mimetypes
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -438,7 +439,7 @@ async def request_with_retries(
                 latency_seconds=time.perf_counter() - attempt_started_at,
             )
         except Exception as exc:  # noqa: BLE001 - keep one-row failures isolated.
-            last_error = f"{type(exc).__name__}: {exc}"
+            last_error = format_row_error(exc)
             if attempt < attempts:
                 await asyncio.sleep(min(2 ** (attempt - 1), 5))
 
@@ -531,9 +532,53 @@ def call_nextchat_iflytek(
             return read_json_reply(response.read())
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HTTP {exc.code}: {body[:500]}") from exc
+        raise RuntimeError(read_http_error_message(exc.code, body)) from exc
     except urllib.error.URLError as exc:
         raise RuntimeError(str(exc.reason)) from exc
+
+
+def read_http_error_message(status_code: int, body: str) -> str:
+    if not body:
+        return f"HTTP {status_code}"
+
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return f"HTTP {status_code}: {body}"
+
+    message = data.get("message")
+    if isinstance(message, str) and message:
+        return f"HTTP {status_code}: {message}"
+    return f"HTTP {status_code}: {body}"
+
+
+def format_row_error(exc: Exception) -> str:
+    message = str(exc)
+    audit_message = extract_iflytek_audit_message(message)
+    if audit_message:
+        return audit_message
+    return f"{type(exc).__name__}: {message}"
+
+
+def extract_iflytek_audit_message(message: str) -> str:
+    if not message:
+        return ""
+
+    text = re.sub(r"^HTTP\s+\d+:\s*", "", message.strip(), flags=re.IGNORECASE)
+    message_marker = "message="
+    if message_marker in text:
+        text = text.split(message_marker, 1)[1]
+    text = re.sub(r",\s*sid=[^\r\n]*\s*$", "", text, flags=re.DOTALL).strip()
+    text = re.sub(
+        r"^AuditImageBlockError:\([^)]+\)\s*",
+        "",
+        text,
+        flags=re.DOTALL,
+    ).strip()
+
+    if text.startswith("非常抱歉"):
+        return text
+    return ""
 
 
 def read_sse_reply(response: Any) -> str:
@@ -634,6 +679,8 @@ def apply_results(
     for row, result in sorted(results.items()):
         if result.status == "success":
             sheet[f"{reply_column}{row}"] = result.reply
+        elif result.error.startswith("非常抱歉"):
+            sheet[f"{reply_column}{row}"] = result.error
         sheet[f"{columns.status}{row}"] = result.status
         if result.latency_seconds is not None:
             sheet[f"{columns.latency}{row}"] = round(result.latency_seconds, 3)

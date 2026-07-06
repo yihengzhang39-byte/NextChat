@@ -339,9 +339,24 @@ def call_nextchat_iflytek(
             return read_json_reply(response.read())
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HTTP {exc.code}: {body[:500]}") from exc
+        raise RuntimeError(read_http_error_message(exc.code, body)) from exc
     except urllib.error.URLError as exc:
         raise RuntimeError(str(exc.reason)) from exc
+
+
+def read_http_error_message(status_code: int, body: str) -> str:
+    if not body:
+        return f"HTTP {status_code}"
+
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return f"HTTP {status_code}: {body}"
+
+    message = data.get("message")
+    if isinstance(message, str) and message:
+        return f"HTTP {status_code}: {message}"
+    return f"HTTP {status_code}: {body}"
 
 
 def read_sse_reply(response: Any) -> str:
