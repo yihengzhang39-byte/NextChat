@@ -9,6 +9,10 @@ import { hashSmsCode, isValidChinaMobile, normalizePhone } from "@/app/lib/sms";
 
 export const runtime = "nodejs";
 
+function codeError(reason: string, message: string) {
+  return NextResponse.json({ error: true, reason, message }, { status: 401 });
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const phone = normalizePhone(String(body.phone ?? ""));
@@ -40,18 +44,26 @@ export async function POST(req: NextRequest) {
     where: {
       phone,
       purpose: "login",
-      consumedAt: null,
-      expiresAt: { gt: new Date() },
-      failedAttempts: { lt: 5 },
     },
     orderBy: { createdAt: "desc" },
   });
 
   if (!smsCode) {
-    return NextResponse.json(
-      { error: true, message: "验证码错误或已过期" },
-      { status: 401 },
-    );
+    return codeError("not_found", "验证码错误");
+  }
+
+  const now = new Date();
+
+  if (smsCode.consumedAt) {
+    return codeError("used_code", "验证码错误");
+  }
+
+  if (smsCode.expiresAt <= now) {
+    return codeError("expired_code", "验证码已超时，请重新获取");
+  }
+
+  if (smsCode.failedAttempts >= 5) {
+    return codeError("too_many_attempts", "验证码错误");
   }
 
   if (smsCode.codeHash !== hashSmsCode(phone, code)) {
@@ -64,10 +76,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      { error: true, message: "验证码错误或已过期" },
-      { status: 401 },
-    );
+    return codeError("invalid_code", "验证码错误");
   }
 
   const user = await upsertAcceptedPhoneUser(phone);
@@ -92,10 +101,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!consumed) {
-    return NextResponse.json(
-      { error: true, message: "验证码错误或已过期" },
-      { status: 401 },
-    );
+    return codeError("invalid_code", "验证码错误");
   }
 
   setBuiltSessionCookie(session);

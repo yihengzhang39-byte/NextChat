@@ -3,6 +3,21 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-09 - SMS login error message split
+
+### Completed
+
+- Updated `/api/auth/sms/login` to return distinguishable verification-code failure reasons without changing the formal SMS send flow, Aliyun integration, filing-test login, or session-writing path.
+- Wrong 6-digit codes now return `reason: "invalid_code"` with `message: "验证码错误"`.
+- Expired codes now return `reason: "expired_code"` with `message: "验证码已超时，请重新获取"`.
+
+### Verification
+
+- Ran Prettier on `app/api/auth/sms/login/route.ts`.
+- Ran `node_modules\.bin\tsc.cmd --noEmit --pretty false`; passed.
+- Ran `git diff --check`; passed with line-ending warnings only.
+- Did not start the app or call Aliyun SMS.
+
 ## 2026-07-09 - Formal Aliyun SMS login hardening
 
 ### Completed
