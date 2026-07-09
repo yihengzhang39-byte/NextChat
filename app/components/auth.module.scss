@@ -354,21 +354,6 @@
   line-height: 1.5;
 }
 
-.phone-auth-fill {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 40px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(16, 163, 127, 0.24);
-  border-radius: 8px;
-  background: rgba(16, 163, 127, 0.08);
-  color: var(--primary);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 .phone-auth-submit {
   width: 100%;
   box-sizing: border-box;
@@ -381,6 +366,22 @@
   }
 }
 
+.phone-auth-filing-link {
+  align-self: center;
+  margin-top: 14px;
+  border: 0;
+  background: transparent;
+  color: #d92d20;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
 .auth-return {
   position: absolute;
   top: 24px;

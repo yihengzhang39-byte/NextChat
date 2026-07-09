@@ -1,6 +1,27 @@
-﻿# Handoff
+# Handoff
 
 ## Current Status
+
+**2026-07-09 update - formal Aliyun SMS login hardening:**
+
+- Formal `手机号登录` no longer uses `SMS_MOCK_CODE`; send-code now generates a random 6-digit code and calls Aliyun Dysmsapi `SendSms`.
+- Aliyun SMS config reads `ALIYUN_ACCESS_KEY_ID`, `ALIYUN_ACCESS_KEY_SECRET`, `ALIYUN_SMS_SIGN_NAME`, `ALIYUN_SMS_TEMPLATE_CODE`, and `ALIYUN_SMS_TEMPLATE_PARAM_KEY` defaulting to `code`.
+- `.env.template` sets non-secret defaults `ALIYUN_SMS_SIGN_NAME=无锡讯智未来`, `ALIYUN_SMS_TEMPLATE_CODE=SMS_509730034`, and `ALIYUN_SMS_TEMPLATE_PARAM_KEY=code`; real AccessKey values remain local only.
+- Send-code limits: 60 seconds between sends for the same phone, 10 sends per phone per day, 5-minute expiry, and old unconsumed codes invalidated when a new code is sent.
+- Login invalidates a code immediately on success and now invalidates it after five wrong attempts via `SmsCode.failedAttempts`.
+- Added Prisma migration `20260709170000_add_sms_failed_attempts`; run migrations before validating formal SMS login.
+- Verification run: Prettier on touched code/YAML, `prisma generate`, and `node_modules\.bin\tsc.cmd --noEmit --pretty false` passed. No app server, browser verification, Aliyun SMS call, or model API call was run.
+
+
+**2026-07-09 update - filing test login:**
+
+- Added a formal-login-page footer entry `备案测试专用` that navigates to `/#/auth/filing-test`.
+- Added a filing test login screen that reuses the phone-code login UI, shows the fixed-code hint, returns to `/#/auth`, and never calls the SMS send route when requesting the code.
+- Added `/api/auth/filing-test-login`, gated by `FILING_TEST_LOGIN_ENABLED=true`, using `FILING_TEST_LOGIN_CODE` and the existing phone user/session/cookie logic.
+- Formal SMS login remains isolated: `/api/auth/sms/login` still validates stored SMS codes and does not accept fixed `123456` by itself.
+- `.env.template`, gitignored local `.env`, and `docker-compose.override.yml` include the filing test env vars. Aliyun SMS variables and SDK usage were not changed.
+- Verification run: Prettier on touched TS/TSX/SCSS/YAML files and `node_modules\.bin\tsc.cmd --noEmit --pretty false` passed. No app server, browser verification, Aliyun SMS call, or model API call was run.
+- User verification still needed: test `/#/auth` -> `备案测试专用` -> fixed-code login with `123456`, and confirm a wrong code is rejected.
 
 **2026-07-06 update - imagev4 audit/business error passthrough:**
 

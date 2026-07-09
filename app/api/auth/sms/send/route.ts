@@ -22,13 +22,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const recentCount = await prisma.smsCode.count({
-    where: {
-      phone,
-      purpose: "login",
-      createdAt: { gte: new Date(Date.now() - 60 * 1000) },
-    },
-  });
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  const [recentCount, todayCount] = await Promise.all([
+    prisma.smsCode.count({
+      where: {
+        phone,
+        purpose: "login",
+        createdAt: { gte: new Date(now.getTime() - 60 * 1000) },
+      },
+    }),
+    prisma.smsCode.count({
+      where: {
+        phone,
+        purpose: "login",
+        createdAt: { gte: today },
+      },
+    }),
+  ]);
 
   if (recentCount > 0) {
     return NextResponse.json(
@@ -37,24 +50,43 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const code = process.env.SMS_MOCK_CODE || createSmsCode();
-  const result = await sendSmsCode(phone, code);
+  if (todayCount >= 10) {
+    return NextResponse.json(
+      { error: true, message: "今日验证码发送次数已达上限" },
+      { status: 429 },
+    );
+  }
 
-  await prisma.smsCode.create({
-    data: {
-      phone,
-      codeHash: hashSmsCode(phone, code),
-      purpose: "login",
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-      ip: getRequestIp(req),
-      userAgent: getUserAgent(req),
-    },
-  });
+  const code = createSmsCode();
+
+  try {
+    await sendSmsCode(phone, code);
+  } catch {
+    return NextResponse.json(
+      { error: true, message: "验证码发送失败，请稍后重试" },
+      { status: 502 },
+    );
+  }
+
+  await prisma.$transaction([
+    prisma.smsCode.updateMany({
+      where: { phone, purpose: "login", consumedAt: null },
+      data: { consumedAt: new Date() },
+    }),
+    prisma.smsCode.create({
+      data: {
+        phone,
+        codeHash: hashSmsCode(phone, code),
+        purpose: "login",
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        ip: getRequestIp(req),
+        userAgent: getUserAgent(req),
+      },
+    }),
+  ]);
 
   return NextResponse.json({
     error: false,
-    mocked: result.mocked,
-    mockCode: result.mocked ? result.code : undefined,
-    message: result.mocked ? "开发环境验证码已生成" : "验证码已发送",
+    message: "验证码已发送",
   });
 }

@@ -21,7 +21,7 @@
 - [ ] 用户运行 Docker 重建并在真实网页上传图片验证 `image@Iflytek` 图片问答
 - [ ] 获取/确认讯飞文本聊天模型能力，再决定是否把普通文本默认链路从 Baidu 切到 Iflytek
 - [ ] 简化 UI：移除模型切换下拉框，隐藏 Settings 中的 Provider 选择（像 DeepSeek 网页端，只服务单一模型）
-- [ ] 配置阿里云短信凭证
+- [ ] 填写生产阿里云短信 AccessKey 并本地验证真实短信发送
 - [ ] 修复 ESLint pre-commit hook 的 `unused-imports` 规则 bug（`eslint-rule-composer` 版本兼容问题）
 
 ## Later

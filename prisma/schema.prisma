@@ -33,6 +33,7 @@ model SmsCode {
   codeHash    String
   purpose     String    @default("login")
   expiresAt   DateTime
+  failedAttempts Int    @default(0)
   consumedAt  DateTime?
   createdAt   DateTime  @default(now())
   userAgent   String?

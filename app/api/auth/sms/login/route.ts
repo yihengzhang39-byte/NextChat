@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/db";
-import { getRequestIp, getUserAgent } from "@/app/lib/request";
-import { hashSmsCode, isValidChinaMobile, normalizePhone } from "@/app/lib/sms";
 import {
-  createSessionToken,
-  hashToken,
-  sessionExpiresAt,
-  setSessionCookie,
-} from "@/app/lib/session";
+  buildUserSession,
+  setBuiltSessionCookie,
+  upsertAcceptedPhoneUser,
+} from "@/app/lib/phone-login";
+import { hashSmsCode, isValidChinaMobile, normalizePhone } from "@/app/lib/sms";
 
 export const runtime = "nodejs";
 
@@ -42,9 +40,9 @@ export async function POST(req: NextRequest) {
     where: {
       phone,
       purpose: "login",
-      codeHash: hashSmsCode(phone, code),
       consumedAt: null,
       expiresAt: { gt: new Date() },
+      failedAttempts: { lt: 5 },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -56,39 +54,51 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const user = await prisma.user.upsert({
-    where: { phone },
-    update: {
-      acceptedTerms: true,
-      acceptedAt: new Date(),
-    },
-    create: {
-      phone,
-      acceptedTerms: true,
-      acceptedAt: new Date(),
-    },
+  if (smsCode.codeHash !== hashSmsCode(phone, code)) {
+    const failedAttempts = smsCode.failedAttempts + 1;
+    await prisma.smsCode.updateMany({
+      where: { id: smsCode.id, consumedAt: null, failedAttempts: { lt: 5 } },
+      data: {
+        failedAttempts: { increment: 1 },
+        ...(failedAttempts >= 5 ? { consumedAt: new Date() } : {}),
+      },
+    });
+
+    return NextResponse.json(
+      { error: true, message: "验证码错误或已过期" },
+      { status: 401 },
+    );
+  }
+
+  const user = await upsertAcceptedPhoneUser(phone);
+  const session = buildUserSession(req, user.id);
+
+  const consumed = await prisma.$transaction(async (tx) => {
+    const result = await tx.smsCode.updateMany({
+      where: {
+        id: smsCode.id,
+        codeHash: smsCode.codeHash,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+        failedAttempts: { lt: 5 },
+      },
+      data: { consumedAt: new Date(), userId: user.id },
+    });
+
+    if (result.count === 0) return false;
+
+    await tx.userSession.create({ data: session.data });
+    return true;
   });
 
-  const token = createSessionToken();
-  const expiresAt = sessionExpiresAt();
+  if (!consumed) {
+    return NextResponse.json(
+      { error: true, message: "验证码错误或已过期" },
+      { status: 401 },
+    );
+  }
 
-  await prisma.$transaction([
-    prisma.smsCode.update({
-      where: { id: smsCode.id },
-      data: { consumedAt: new Date(), userId: user.id },
-    }),
-    prisma.userSession.create({
-      data: {
-        tokenHash: hashToken(token),
-        expiresAt,
-        ip: getRequestIp(req),
-        userAgent: getUserAgent(req),
-        userId: user.id,
-      },
-    }),
-  ]);
-
-  setSessionCookie(token, expiresAt);
+  setBuiltSessionCookie(session);
 
   return NextResponse.json({
     error: false,

@@ -1,7 +1,54 @@
-﻿# Worklog
+# Worklog
 
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
+
+## 2026-07-09 - Formal Aliyun SMS login hardening
+
+### Completed
+
+- Re-read current auth flow: login page, phone-code UI, send-code route, login route, mock behavior, session/user helpers, Prisma schema, routes, `.env.template`, and Docker Compose injection.
+- Removed formal SMS mock-code behavior from the send route and login UI; formal `手机号登录` now always generates a random 6-digit code and calls Aliyun SMS.
+- Updated Aliyun SendSms signing to use `ALIYUN_SMS_SIGN_NAME`, `ALIYUN_SMS_TEMPLATE_CODE`, and configurable `ALIYUN_SMS_TEMPLATE_PARAM_KEY` with default `code`.
+- Added 60-second resend limit, 10 successful sends per phone per day, 5-minute expiry, old-code invalidation when sending a new code, and 5 wrong attempts before invalidating a code.
+- Added `SmsCode.failedAttempts` plus migration `20260709170000_add_sms_failed_attempts`; code hashes remain stored instead of plaintext codes.
+- Kept filing-test login on the dedicated `/api/auth/filing-test-login` route and kept it isolated from formal SMS login.
+- Updated `.env.template`, local gitignored `.env` non-secret SMS defaults, and Docker Compose Aliyun env injection. Real AccessKey values were not read, printed, or written.
+
+### Verification
+
+- Ran `node_modules\.bin\prettier.cmd --write` on touched TS/TSX/SCSS/YAML files; `.env.template` remains manually formatted because Prettier has no parser for it.
+- Ran `node_modules\.bin\prisma.cmd generate` after adding `SmsCode.failedAttempts`.
+- Ran `node_modules\.bin\tsc.cmd --noEmit --pretty false`; passed.
+- Did not start the app, call Aliyun SMS, call model APIs, or run browser verification.
+
+### User Verification Needed
+
+- Fill real `ALIYUN_ACCESS_KEY_ID` and `ALIYUN_ACCESS_KEY_SECRET` in local `.env`.
+- Apply Prisma migration, then test formal SMS send/login and filing-test login locally.
+
+## 2026-07-09 - Filing test login entry
+
+### Completed
+
+- Added a red, centered `备案测试专用` entry at the bottom of the existing phone-code login form.
+- Added a `/#/auth/filing-test` login screen that reuses the current phone login UI, changes the title to `备案测试专用登录`, shows `验证码固定为 123456`, and returns to `/#/auth` from the top-left return button.
+- The filing test screen's `获取验证码` button only displays `备案测试验证码为 123456`; it does not call the SMS send route or Aliyun.
+- Added the dedicated backend route `/api/auth/filing-test-login`, gated by `FILING_TEST_LOGIN_ENABLED=true`, and checking `FILING_TEST_LOGIN_CODE` before reusing the existing phone user/session/cookie path.
+- Kept the formal `/api/auth/sms/login` route dependent on stored SMS codes; it was not changed to accept fixed `123456`.
+- Added `FILING_TEST_LOGIN_ENABLED=true` and `FILING_TEST_LOGIN_CODE=123456` to `.env.template`, local gitignored `.env`, and Docker Compose app environment injection.
+
+### Verification
+
+- Ran `node_modules\.bin\prettier.cmd --write` on touched TS/TSX/SCSS/YAML files.
+- Ran `node_modules\.bin\tsc.cmd --noEmit --pretty false`; passed.
+- Did not start the app, call Aliyun SMS, call real model APIs, or run browser verification.
+
+### User Verification Needed
+
+- Open `http://localhost:3000/#/auth`, confirm the formal phone login still works as before and shows the red `备案测试专用` entry.
+- Open the filing test page through that entry, request the code, then log in with a valid phone number, accepted terms, and code `123456`.
+- Confirm any other 6-digit code returns `验证码错误`.
 
 ## 2026-07-06 - Iflytek image-only audit message Excel display
 

@@ -6,23 +6,30 @@ import { Path } from "../constant";
 import Locale from "../locales";
 import clsx from "clsx";
 
-export function AuthPage() {
+const FILING_TEST_CODE = "123456";
+
+export function AuthPage(props: { filingTest?: boolean }) {
   const navigate = useNavigate();
+  const filingTest = Boolean(props.filingTest);
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
-  const [mockCode, setMockCode] = useState("");
 
   const canSendCode = useMemo(() => /^1[3-9]\d{9}$/.test(phone), [phone]);
   const canLogin = canSendCode && /^\d{6}$/.test(code) && acceptedTerms;
 
   async function sendCode() {
-    setSending(true);
     setMessage("");
-    setMockCode("");
+
+    if (filingTest) {
+      setMessage(`备案测试验证码为 ${FILING_TEST_CODE}`);
+      return;
+    }
+
+    setSending(true);
     try {
       const res = await fetch("/api/auth/sms/send", {
         method: "POST",
@@ -31,12 +38,13 @@ export function AuthPage() {
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        throw new Error(data.message ?? "验证码发送失败");
+        throw new Error(data.message ?? "验证码发送失败，请稍后重试");
       }
-      setMockCode(data.mockCode ?? "");
-      setMessage(data.mocked ? `开发验证码：${data.mockCode}` : "验证码已发送");
+      setMessage(data.message ?? "验证码已发送");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "验证码发送失败");
+      setMessage(
+        err instanceof Error ? err.message : "验证码发送失败，请稍后重试",
+      );
     } finally {
       setSending(false);
     }
@@ -46,11 +54,14 @@ export function AuthPage() {
     setLoading(true);
     setMessage("");
     try {
-      const res = await fetch("/api/auth/sms/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code, acceptedTerms }),
-      });
+      const res = await fetch(
+        filingTest ? "/api/auth/filing-test-login" : "/api/auth/sms/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, code, acceptedTerms }),
+        },
+      );
       const data = await res.json();
       if (!res.ok || data.error) {
         throw new Error(data.message ?? "登录失败");
@@ -83,8 +94,10 @@ export function AuthPage() {
 
         <section className={styles["phone-auth-card"]}>
           <div className={styles["phone-auth-card-head"]}>
-            <h2>手机号登录</h2>
-            <span>验证码 5 分钟内有效</span>
+            <h2>{filingTest ? "备案测试专用登录" : "手机号登录"}</h2>
+            <span>
+              {filingTest ? "验证码固定为 123456" : "验证码 5 分钟内有效"}
+            </span>
           </div>
 
           <div className={styles["phone-auth-form"]}>
@@ -146,14 +159,6 @@ export function AuthPage() {
             {message && (
               <div className={styles["phone-auth-message"]}>{message}</div>
             )}
-            {mockCode && code === "" && (
-              <button
-                className={styles["phone-auth-fill"]}
-                onClick={() => setCode(mockCode)}
-              >
-                填入开发验证码
-              </button>
-            )}
 
             <IconButton
               className={styles["phone-auth-submit"]}
@@ -162,14 +167,23 @@ export function AuthPage() {
               disabled={!canLogin || loading}
               onClick={login}
             />
+
+            {!filingTest && (
+              <button
+                className={styles["phone-auth-filing-link"]}
+                onClick={() => navigate(Path.FilingTestAuth)}
+              >
+                备案测试专用
+              </button>
+            )}
           </div>
         </section>
       </div>
 
       <IconButton
         className={styles["auth-return"]}
-        text={Locale.Auth.Return}
-        onClick={() => navigate(Path.Home)}
+        text={filingTest ? "返回" : Locale.Auth.Return}
+        onClick={() => navigate(filingTest ? Path.Auth : Path.Home)}
       />
     </div>
   );

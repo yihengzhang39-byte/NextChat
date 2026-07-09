@@ -3,6 +3,44 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-09: Formal SMS Login Uses Real Aliyun Codes Only
+
+### Context
+
+The product needs formal phone-code login through Aliyun SMS, while the fixed `123456` path is only for filing test verification.
+
+### Decision
+
+- Remove `SMS_MOCK_CODE` from formal SMS login and keep fixed-code behavior only in `/api/auth/filing-test-login`.
+- Continue using the existing hand-signed Aliyun Dysmsapi `SendSms` request instead of adding an SDK dependency.
+- Store only hashed SMS codes and add `SmsCode.failedAttempts` to invalidate a code after five wrong login attempts.
+- Keep formal send limits in the existing `SmsCode` table: 60-second resend throttle and 10 sends per phone per day.
+
+### Consequences
+
+- Production SMS requires valid Aliyun env vars; missing or provider-failed sends return the generic user message `验证码发送失败，请稍后重试`.
+- Aliyun logs must remain limited to masked phone numbers and provider/status summaries; no AccessKey, signed URL, full phone, or plaintext verification code should be logged.
+- Deployments must run the new Prisma migration before using the updated formal SMS login route.
+
+## 2026-07-09: Keep Filing Test Login Isolated From Formal SMS Login
+
+### Context
+
+Aliyun SMS credentials are not ready, but ICP filing verification needs a temporary phone-login path with a fixed code.
+
+### Decision
+
+- Add the filing test flow as a separate UI route and backend route: `/#/auth/filing-test` and `/api/auth/filing-test-login`.
+- Require `FILING_TEST_LOGIN_ENABLED=true` before the filing test route can authenticate anyone.
+- Check `FILING_TEST_LOGIN_CODE` only inside the filing test route; the formal SMS login route continues to require a stored, unexpired SMS code.
+- Reuse the existing phone user, session, cookie, IP, and user-agent write path instead of adding a parallel login-state mechanism.
+
+### Consequences
+
+- Filing test login can be disabled by environment without touching formal SMS login.
+- Aliyun SMS integration remains unchanged and can be completed later without removing the filing test route first.
+- Any future cleanup should remove the dedicated filing test route and env vars when ICP testing is no longer needed.
+
 ## 2026-07-06: Preserve imagev4 Upstream Business Error Details
 
 ### Context

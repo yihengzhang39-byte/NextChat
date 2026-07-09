@@ -41,7 +41,6 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
-      - SMS_MOCK_CODE=${SMS_MOCK_CODE:-123456}
       - BAIDU_API_KEY=${BAIDU_API_KEY}
       - BAIDU_SECRET_KEY=${BAIDU_SECRET_KEY:-}
       - BAIDU_URL=${BAIDU_URL:-}
@@ -57,6 +56,13 @@ services:
       - IFLYTEK_IMAGE_WS_PATH=${IFLYTEK_IMAGE_WS_PATH:-/v2.1/image}
       - IFLYTEK_IMAGE_MODEL=${IFLYTEK_IMAGE_MODEL:-imagev4}
       - SMS_CODE_SECRET=${SMS_CODE_SECRET:-dev-sms-secret}
+      - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID:-}
+      - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET:-}
+      - ALIYUN_SMS_SIGN_NAME=${ALIYUN_SMS_SIGN_NAME:-}
+      - ALIYUN_SMS_TEMPLATE_CODE=${ALIYUN_SMS_TEMPLATE_CODE:-}
+      - ALIYUN_SMS_TEMPLATE_PARAM_KEY=${ALIYUN_SMS_TEMPLATE_PARAM_KEY:-code}
+      - FILING_TEST_LOGIN_ENABLED=${FILING_TEST_LOGIN_ENABLED:-true}
+      - FILING_TEST_LOGIN_CODE=${FILING_TEST_LOGIN_CODE:-123456}
 
   chatgpt-next-web-proxy:
     build:
@@ -69,7 +75,6 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
-      - SMS_MOCK_CODE=${SMS_MOCK_CODE:-123456}
       - BAIDU_API_KEY=${BAIDU_API_KEY}
       - BAIDU_SECRET_KEY=${BAIDU_SECRET_KEY:-}
       - BAIDU_URL=${BAIDU_URL:-}
@@ -85,6 +90,13 @@ services:
       - IFLYTEK_IMAGE_WS_PATH=${IFLYTEK_IMAGE_WS_PATH:-/v2.1/image}
       - IFLYTEK_IMAGE_MODEL=${IFLYTEK_IMAGE_MODEL:-imagev4}
       - SMS_CODE_SECRET=${SMS_CODE_SECRET:-dev-sms-secret}
+      - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID:-}
+      - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET:-}
+      - ALIYUN_SMS_SIGN_NAME=${ALIYUN_SMS_SIGN_NAME:-}
+      - ALIYUN_SMS_TEMPLATE_CODE=${ALIYUN_SMS_TEMPLATE_CODE:-}
+      - ALIYUN_SMS_TEMPLATE_PARAM_KEY=${ALIYUN_SMS_TEMPLATE_PARAM_KEY:-code}
+      - FILING_TEST_LOGIN_ENABLED=${FILING_TEST_LOGIN_ENABLED:-true}
+      - FILING_TEST_LOGIN_CODE=${FILING_TEST_LOGIN_CODE:-123456}
 
 volumes:
   iflytek-chat-postgres:

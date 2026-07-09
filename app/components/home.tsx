@@ -175,6 +175,7 @@ function Screen() {
   const isArtifact = location.pathname.includes(Path.Artifacts);
   const isHome = location.pathname === Path.Home;
   const isAuth = location.pathname === Path.Auth;
+  const isFilingTestAuth = location.pathname === Path.FilingTestAuth;
   const isLegal = location.pathname.startsWith(Path.Legal);
   const isSd = location.pathname === Path.Sd;
   const isSdNew = location.pathname === Path.SdNew;
@@ -188,7 +189,13 @@ function Screen() {
   }, []);
 
   useEffect(() => {
-    if (isAuth || isLegal || location.pathname === Path.FeedbackAdmin) return;
+    if (
+      isAuth ||
+      isFilingTestAuth ||
+      isLegal ||
+      location.pathname === Path.FeedbackAdmin
+    )
+      return;
 
     fetch("/api/auth/me")
       .then((res) => {
@@ -197,7 +204,7 @@ function Screen() {
         }
       })
       .catch(() => navigate(Path.Auth));
-  }, [isAuth, isLegal, location.pathname, navigate]);
+  }, [isAuth, isFilingTestAuth, isLegal, location.pathname, navigate]);
 
   if (isArtifact) {
     return (
@@ -208,6 +215,7 @@ function Screen() {
   }
   const renderContent = () => {
     if (isAuth) return <AuthPage />;
+    if (isFilingTestAuth) return <AuthPage filingTest />;
     if (isLegal) {
       return (
         <Routes>
