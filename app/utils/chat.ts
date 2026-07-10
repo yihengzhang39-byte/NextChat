@@ -1,5 +1,7 @@
 import {
   CACHE_URL_PREFIX,
+  CHAT_FILE_UPLOAD_URL,
+  CHAT_FILE_URL_PREFIX,
   UPLOAD_URL,
   REQUEST_TIMEOUT_MS,
 } from "@/app/constant";
@@ -112,21 +114,26 @@ export async function preProcessImageContentForAlibabaDashScope(
 
 const imageCaches: Record<string, string> = {};
 export function cacheImageToBase64Image(imageUrl: string) {
-  if (imageUrl.includes(CACHE_URL_PREFIX)) {
-    if (!imageCaches[imageUrl]) {
-      const reader = new FileReader();
-      return fetch(imageUrl, {
-        method: "GET",
-        mode: "cors",
-        credentials: "include",
-      })
-        .then((res) => res.blob())
-        .then(
-          async (blob) =>
-            (imageCaches[imageUrl] = await compressImage(blob, 256 * 1024)),
-        ); // compressImage
+  const isLegacyCache = imageUrl.includes(CACHE_URL_PREFIX);
+  const isChatFile = imageUrl.includes(CHAT_FILE_URL_PREFIX);
+  if (isLegacyCache || isChatFile) {
+    if (isLegacyCache && imageCaches[imageUrl]) {
+      return Promise.resolve(imageCaches[imageUrl]);
     }
-    return Promise.resolve(imageCaches[imageUrl]);
+    return fetch(imageUrl, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("图片读取失败");
+        return res.blob();
+      })
+      .then(async (blob) => {
+        const dataUrl = await compressImage(blob, 256 * 1024);
+        if (isLegacyCache) imageCaches[imageUrl] = dataUrl;
+        return dataUrl;
+      });
   }
   return Promise.resolve(imageUrl);
 }
@@ -141,7 +148,24 @@ export function base64Image2Blob(base64Data: string, contentType: string) {
   return new Blob([byteArray], { type: contentType });
 }
 
-export function uploadImage(file: Blob): Promise<string> {
+export function uploadImage(file: Blob, sessionId?: string): Promise<string> {
+  if (sessionId) {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("sessionId", sessionId);
+    return fetch(CHAT_FILE_UPLOAD_URL, {
+      method: "POST",
+      body,
+      credentials: "include",
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error || !data.url) {
+        throw new Error(data.message ?? "图片上传失败");
+      }
+      return data.url as string;
+    });
+  }
+
   if (!window._SW_ENABLED) {
     // if serviceWorker register error, using compressImage
     return compressImage(file, 256 * 1024);

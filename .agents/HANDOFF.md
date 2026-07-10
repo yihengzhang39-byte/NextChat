@@ -2,6 +2,16 @@
 
 ## Current Status
 
+**2026-07-10 update - account-scoped chat persistence:**
+
+- Chat sessions now persist as `ChatSession.data` JSON snapshots scoped by `userId`; `ChatFile` stores only image metadata while bytes are stored in `CHAT_UPLOAD_DIR/<userId>/<sessionId>/`.
+- New `/api/chat/sessions` and `/api/chat/files` routes reuse the existing Session/Cookie user resolver. Session and file reads always include the current `userId`; cross-account IDs return 404 and protected image responses use `Cache-Control: private, no-store`.
+- Chat Zustand is now page state only: it loads the signed-in account's sessions from the database, clears on logout, and no longer rehydrates cross-account chat sessions from IndexedDB. Old local histories are intentionally not migrated.
+- `.env.template` and both local Docker app services include `CHAT_UPLOAD_DIR=/data/chat-uploads` plus `./data/chat-uploads:/data/chat-uploads` bind mounts.
+- Static verification passed: Prettier on supported touched files, Prisma validate/generate, TypeScript check, and the chat-snapshot unit test. No migration was applied, and Docker/browser/model/SMS verification remains user work.
+
+**User next steps:** apply `prisma migrate deploy`, rebuild the no-proxy Docker stack, and manually test A/B account isolation plus protected image access.
+
 **2026-07-09 update - formal Aliyun SMS login hardening:**
 
 - Formal `手机号登录` no longer uses `SMS_MOCK_CODE`; send-code now generates a random 6-digit code and calls Aliyun Dysmsapi `SendSms`.

@@ -38,6 +38,7 @@ import { collectModelsWithDefaultModel } from "../utils/model";
 import { createEmptyMask, Mask } from "./mask";
 import { executeMcpAction, getAllTools, isMcpEnabled } from "../mcp/actions";
 import { extractMcpJson, isMcpJson } from "../mcp/utils";
+import { sanitizeChatSnapshot } from "../utils/chat-snapshot";
 
 const localStorage = safeLocalStorage();
 
@@ -227,7 +228,11 @@ const DEFAULT_CHAT_STATE = {
   sessions: [createEmptySession()],
   currentSessionIndex: 0,
   lastInput: "",
+  activeUserId: "",
 };
+
+const CHAT_SAVE_DELAY_MS = 600;
+const chatSaveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export const useChatStore = createPersistStore(
   DEFAULT_CHAT_STATE,
@@ -239,7 +244,122 @@ export const useChatStore = createPersistStore(
       };
     }
 
+    function clearSaveTimers() {
+      chatSaveTimers.forEach((timer) => clearTimeout(timer));
+      chatSaveTimers.clear();
+    }
+
+    function scheduleSave(sessionId: string) {
+      if (!get().activeUserId) return;
+      const oldTimer = chatSaveTimers.get(sessionId);
+      if (oldTimer) clearTimeout(oldTimer);
+      chatSaveTimers.set(
+        sessionId,
+        setTimeout(() => {
+          chatSaveTimers.delete(sessionId);
+          void get().saveSession(sessionId);
+        }, CHAT_SAVE_DELAY_MS),
+      );
+    }
+
     const methods = {
+      async loadSessions(userId: string) {
+        if (get().activeUserId === userId) return;
+
+        clearSaveTimers();
+        set({
+          activeUserId: userId,
+          sessions: [createEmptySession()],
+          currentSessionIndex: 0,
+          lastInput: "",
+        });
+
+        try {
+          const response = await fetch("/api/chat/sessions");
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.error || get().activeUserId !== userId) {
+            throw new Error("failed to load chat sessions");
+          }
+
+          const sessions = Array.isArray(payload.sessions)
+            ? payload.sessions.flatMap((record: any) => {
+                const session = record?.data;
+                if (!session || typeof session !== "object" || !record?.id) {
+                  return [];
+                }
+                return [
+                  {
+                    ...session,
+                    id: record.id,
+                    topic: record.title || session.topic || DEFAULT_TOPIC,
+                    lastUpdate:
+                      new Date(record.updatedAt).getTime() ||
+                      session.lastUpdate ||
+                      Date.now(),
+                  } as ChatSession,
+                ];
+              })
+            : [];
+
+          if (sessions.length > 0) {
+            set({ sessions, currentSessionIndex: 0 });
+            return;
+          }
+
+          const session = createEmptySession();
+          set({ sessions: [session], currentSessionIndex: 0 });
+          await get().saveSession(session.id);
+        } catch (error) {
+          console.error("[Chat] failed to load account sessions");
+        }
+      },
+
+      resetForLogout() {
+        clearSaveTimers();
+        set({
+          activeUserId: "",
+          sessions: [createEmptySession()],
+          currentSessionIndex: 0,
+          lastInput: "",
+        });
+      },
+
+      async saveSession(sessionId: string) {
+        if (!get().activeUserId) return false;
+        const timer = chatSaveTimers.get(sessionId);
+        if (timer) {
+          clearTimeout(timer);
+          chatSaveTimers.delete(sessionId);
+        }
+
+        const session = get().sessions.find((item) => item.id === sessionId);
+        if (!session) return true;
+
+        try {
+          const response = await fetch(
+            `/api/chat/sessions/${encodeURIComponent(session.id)}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: session.topic,
+                model: session.mask.modelConfig.model,
+                data: sanitizeChatSnapshot(session),
+              }),
+            },
+          );
+          if (!response.ok) {
+            showToast("聊天记录保存失败，请稍后重试");
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.error("[Chat] failed to save account session");
+          showToast("聊天记录保存失败，请稍后重试");
+          return false;
+        }
+      },
+
       forkSession() {
         // 获取当前会话
         const currentSession = get().currentSession();
@@ -264,6 +384,7 @@ export const useChatStore = createPersistStore(
           currentSessionIndex: 0,
           sessions: [newSession, ...state.sessions],
         }));
+        void get().saveSession(newSession.id);
       },
 
       clearSessions() {
@@ -325,6 +446,7 @@ export const useChatStore = createPersistStore(
           currentSessionIndex: 0,
           sessions: [session].concat(state.sessions),
         }));
+        void get().saveSession(session.id);
       },
 
       nextSession(delta: number) {
@@ -365,12 +487,30 @@ export const useChatStore = createPersistStore(
           sessions,
         }));
 
+        const deleteRequest = get().activeUserId
+          ? fetch(
+              `/api/chat/sessions/${encodeURIComponent(deletedSession.id)}`,
+              {
+                method: "DELETE",
+              },
+            )
+          : Promise.resolve();
+
+        if (deletingLastSession) {
+          void get().saveSession(sessions[0].id);
+        }
+
         showToast(
           Locale.Home.DeleteToast,
           {
             text: Locale.Home.Revert,
             onClick() {
               set(() => restoreState);
+              void deleteRequest.finally(() => {
+                restoreState.sessions.forEach((session) => {
+                  void get().saveSession(session.id);
+                });
+              });
             },
           },
           5000,
@@ -811,6 +951,7 @@ export const useChatStore = createPersistStore(
         if (index < 0) return;
         updater(sessions[index]);
         set(() => ({ sessions }));
+        scheduleSave(targetSession.id);
       },
       async clearAllData() {
         await indexedDBStorage.clear();
@@ -860,72 +1001,12 @@ export const useChatStore = createPersistStore(
   },
   {
     name: StoreKey.Chat,
-    version: 3.3,
-    migrate(persistedState, version) {
-      const state = persistedState as any;
-      const newState = JSON.parse(
-        JSON.stringify(state),
-      ) as typeof DEFAULT_CHAT_STATE;
-
-      if (version < 2) {
-        newState.sessions = [];
-
-        const oldSessions = state.sessions;
-        for (const oldSession of oldSessions) {
-          const newSession = createEmptySession();
-          newSession.topic = oldSession.topic;
-          newSession.messages = [...oldSession.messages];
-          newSession.mask.modelConfig.sendMemory = true;
-          newSession.mask.modelConfig.historyMessageCount = 4;
-          newSession.mask.modelConfig.compressMessageLengthThreshold = 1000;
-          newState.sessions.push(newSession);
-        }
-      }
-
-      if (version < 3) {
-        // migrate id to nanoid
-        newState.sessions.forEach((s) => {
-          s.id = nanoid();
-          s.messages.forEach((m) => (m.id = nanoid()));
-        });
-      }
-
-      // Enable `enableInjectSystemPrompts` attribute for old sessions.
-      // Resolve issue of old sessions not automatically enabling.
-      if (version < 3.1) {
-        newState.sessions.forEach((s) => {
-          if (
-            // Exclude those already set by user
-            !s.mask.modelConfig.hasOwnProperty("enableInjectSystemPrompts")
-          ) {
-            // Because users may have changed this configuration,
-            // the user's current configuration is used instead of the default
-            const config = useAppConfig.getState();
-            s.mask.modelConfig.enableInjectSystemPrompts =
-              config.modelConfig.enableInjectSystemPrompts;
-          }
-        });
-      }
-
-      // add default summarize model for every session
-      if (version < 3.2) {
-        newState.sessions.forEach((s) => {
-          const config = useAppConfig.getState();
-          s.mask.modelConfig.compressModel = config.modelConfig.compressModel;
-          s.mask.modelConfig.compressProviderName =
-            config.modelConfig.compressProviderName;
-        });
-      }
-      // revert default summarize model for every session
-      if (version < 3.3) {
-        newState.sessions.forEach((s) => {
-          const config = useAppConfig.getState();
-          s.mask.modelConfig.compressModel = "";
-          s.mask.modelConfig.compressProviderName = "";
-        });
-      }
-
-      return newState as any;
+    version: 4,
+    partialize(state) {
+      return { _hasHydrated: state._hasHydrated } as any;
+    },
+    migrate() {
+      return { ...DEFAULT_CHAT_STATE } as any;
     },
   },
 );

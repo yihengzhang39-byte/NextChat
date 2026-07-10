@@ -35,6 +35,7 @@ DEFAULT_REPLY_COLUMN = "D"
 DEFAULT_STATUS_COLUMN = "E"
 DEFAULT_LATENCY_COLUMN = "F"
 DEFAULT_ERROR_COLUMN = "G"
+DEFAULT_SID_COLUMN = "H"
 DEFAULT_START_ROW = 2
 DEFAULT_CONCURRENCY = 3
 DEFAULT_TIMEOUT_SECONDS = 180.0
@@ -57,6 +58,7 @@ class Result:
     reply: str = ""
     latency_seconds: float | None = None
     error: str = ""
+    sid: str = ""
 
 
 @dataclass(frozen=True)
@@ -64,6 +66,7 @@ class ColumnLayout:
     status: str
     latency: str
     error: str
+    sid: str
 
 
 @dataclass(frozen=True)
@@ -295,6 +298,7 @@ def can_reuse_status_columns(sheet: Any, reply_column: str) -> bool:
         DEFAULT_STATUS_COLUMN: "status",
         DEFAULT_LATENCY_COLUMN: "latency_seconds",
         DEFAULT_ERROR_COLUMN: "error",
+        DEFAULT_SID_COLUMN: "sid",
     }
     for column, header in expected.items():
         if column == reply_column:
@@ -314,6 +318,7 @@ def choose_status_columns(sheet: Any, reply_column: str) -> ColumnLayout:
             status=DEFAULT_STATUS_COLUMN,
             latency=DEFAULT_LATENCY_COLUMN,
             error=DEFAULT_ERROR_COLUMN,
+            sid=DEFAULT_SID_COLUMN,
         )
 
     from openpyxl.utils import column_index_from_string, get_column_letter
@@ -323,6 +328,7 @@ def choose_status_columns(sheet: Any, reply_column: str) -> ColumnLayout:
         status=get_column_letter(start),
         latency=get_column_letter(start + 1),
         error=get_column_letter(start + 2),
+        sid=get_column_letter(start + 3),
     )
 
 
@@ -415,6 +421,7 @@ async def request_with_retries(
 ) -> Result:
     attempts = max(0, retries) + 1
     last_error = ""
+    last_sid = ""
     started_at = time.perf_counter()
 
     for attempt in range(1, attempts + 1):
@@ -448,6 +455,7 @@ async def request_with_retries(
         status="failed",
         latency_seconds=time.perf_counter() - started_at,
         error=last_error,
+        sid=extract_iflytek_sid(last_error),
     )
 
 
@@ -581,6 +589,11 @@ def extract_iflytek_audit_message(message: str) -> str:
     return ""
 
 
+def extract_iflytek_sid(message: str) -> str:
+    match = re.search(r"(?:^|[,\s])sid=([^,\r\n]+)", message)
+    return match.group(1).strip() if match else ""
+
+
 def read_sse_reply(response: Any) -> str:
     answer_parts: list[str] = []
     event_lines: list[str] = []
@@ -667,14 +680,17 @@ def apply_results(
     sheet[f"{columns.status}1"] = "status"
     sheet[f"{columns.latency}1"] = "latency_seconds"
     sheet[f"{columns.error}1"] = "error"
+    sheet[f"{columns.sid}1"] = "sid"
 
     for result in skipped:
         sheet[f"{columns.status}{result.row}"] = result.status
         sheet[f"{columns.error}{result.row}"] = ""
+        sheet[f"{columns.sid}{result.row}"] = ""
 
     for row, result in sorted(invalid.items()):
         sheet[f"{columns.status}{row}"] = result.status
         sheet[f"{columns.error}{row}"] = result.error
+        sheet[f"{columns.sid}{row}"] = result.sid
 
     for row, result in sorted(results.items()):
         if result.status == "success":
@@ -685,6 +701,7 @@ def apply_results(
         if result.latency_seconds is not None:
             sheet[f"{columns.latency}{row}"] = round(result.latency_seconds, 3)
         sheet[f"{columns.error}{row}"] = result.error
+        sheet[f"{columns.sid}{row}"] = result.sid
 
 
 def print_summary(
@@ -785,4 +802,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

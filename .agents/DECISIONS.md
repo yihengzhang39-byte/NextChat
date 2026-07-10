@@ -3,6 +3,25 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-10: Persist Chat by Account Snapshot and Protected Local Files
+
+### Context
+
+The existing chat store persisted all browser chat sessions under one IndexedDB key, so phone-account changes in the same browser could show the previous account's data. Chat images were temporary service-worker files or inline Base64, neither of which supports durable account-scoped history.
+
+### Decision
+
+- Store one complete frontend session snapshot in `ChatSession.data`, keyed by the existing frontend session ID and current authenticated `userId`.
+- Store image bytes only under `CHAT_UPLOAD_DIR/<userId>/<sessionId>/`; `ChatFile` stores metadata and a relative storage key. No Base64/blob is written to PostgreSQL.
+- Reuse `getCurrentUserFromRequest` for every chat API; lookup paths always include `userId`. Protected image URLs require the same Cookie session and are never a public static directory.
+- Stop rehydrating chat sessions from the old IndexedDB store. Keep Zustand as transient UI state and load it from `/api/chat/sessions` after login. Do not automatically migrate old local history.
+
+### Consequences
+
+- A different browser/device can load a user's database sessions after login, while another account cannot query or read those sessions/files by guessed IDs.
+- Image requests still use the existing client-side Base64 preprocessing only at model-request time; the Iflytek imagev4 protocol remains unchanged.
+- Deployments must apply migration `20260710120000_add_account_chat_persistence` and mount a durable writable upload directory before using chat-image persistence.
+
 ## 2026-07-09: Formal SMS Login Uses Real Aliyun Codes Only
 
 ### Context

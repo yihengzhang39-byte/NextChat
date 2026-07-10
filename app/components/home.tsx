@@ -25,7 +25,7 @@ import { useAppConfig } from "../store/config";
 import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
 import { type ClientApi, getClientApi } from "../client/api";
-import { useAccessStore } from "../store";
+import { useAccessStore, useChatStore } from "../store";
 import clsx from "clsx";
 import { initializeMcpSystem, isMcpEnabled } from "../mcp/actions";
 
@@ -198,9 +198,14 @@ function Screen() {
       return;
 
     fetch("/api/auth/me")
-      .then((res) => {
-        if (res.status === 401) {
+      .then(async (res) => {
+        if (!res.ok) {
           navigate(Path.Auth);
+          return;
+        }
+        const data = await res.json();
+        if (data.user?.id) {
+          await useChatStore.getState().loadSessions(data.user.id);
         }
       })
       .catch(() => navigate(Path.Auth));

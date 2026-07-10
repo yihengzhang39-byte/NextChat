@@ -17,7 +17,7 @@ services:
       retries: 5
 
   migrate:
-    profiles: [ "no-proxy", "proxy" ]
+    profiles: ["no-proxy", "proxy"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -28,6 +28,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
+      - CHAT_UPLOAD_DIR=${CHAT_UPLOAD_DIR:-/data/chat-uploads}
     command: yarn prisma:migrate
     restart: "no"
   chatgpt-next-web:
@@ -63,6 +64,8 @@ services:
       - ALIYUN_SMS_TEMPLATE_PARAM_KEY=${ALIYUN_SMS_TEMPLATE_PARAM_KEY:-code}
       - FILING_TEST_LOGIN_ENABLED=${FILING_TEST_LOGIN_ENABLED:-true}
       - FILING_TEST_LOGIN_CODE=${FILING_TEST_LOGIN_CODE:-123456}
+    volumes:
+      - ./data/chat-uploads:/data/chat-uploads
 
   chatgpt-next-web-proxy:
     build:
@@ -74,6 +77,7 @@ services:
         condition: service_completed_successfully
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
+      - CHAT_UPLOAD_DIR=${CHAT_UPLOAD_DIR:-/data/chat-uploads}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
       - BAIDU_API_KEY=${BAIDU_API_KEY}
       - BAIDU_SECRET_KEY=${BAIDU_SECRET_KEY:-}
@@ -97,6 +101,8 @@ services:
       - ALIYUN_SMS_TEMPLATE_PARAM_KEY=${ALIYUN_SMS_TEMPLATE_PARAM_KEY:-code}
       - FILING_TEST_LOGIN_ENABLED=${FILING_TEST_LOGIN_ENABLED:-true}
       - FILING_TEST_LOGIN_CODE=${FILING_TEST_LOGIN_CODE:-123456}
+    volumes:
+      - ./data/chat-uploads:/data/chat-uploads
 
 volumes:
   iflytek-chat-postgres:

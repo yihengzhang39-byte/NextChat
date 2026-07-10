@@ -41,6 +41,8 @@ export const AI302_BASE_URL = "https://api.302.ai";
 
 export const CACHE_URL_PREFIX = "/api/cache";
 export const UPLOAD_URL = `${CACHE_URL_PREFIX}/upload`;
+export const CHAT_FILE_URL_PREFIX = "/api/chat/files/";
+export const CHAT_FILE_UPLOAD_URL = "/api/chat/files";
 
 export enum Path {
   Home = "/",

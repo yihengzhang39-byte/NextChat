@@ -1041,6 +1041,16 @@ function _Chat() {
   const [attachImages, setAttachImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  const uploadChatImage = useCallback(
+    async (file: File) => {
+      const currentSession = chatStore.currentSession();
+      const saved = await chatStore.saveSession(currentSession.id);
+      if (!saved) throw new Error("聊天记录保存失败，请稍后重试");
+      return uploadImageRemote(file, currentSession.id);
+    },
+    [chatStore],
+  );
+
   // prompt hints
   const promptStore = usePromptStore();
   const [promptHints, setPromptHints] = useState<RenderPrompt[]>([]);
@@ -1534,7 +1544,7 @@ function _Chat() {
               ...(await new Promise<string[]>((res, rej) => {
                 setUploading(true);
                 const imagesData: string[] = [];
-                uploadImageRemote(file)
+                uploadChatImage(file)
                   .then((dataUrl) => {
                     imagesData.push(dataUrl);
                     setUploading(false);
@@ -1556,7 +1566,7 @@ function _Chat() {
         }
       }
     },
-    [attachImages, chatStore],
+    [attachImages, uploadChatImage],
   );
 
   async function uploadImage() {
@@ -1576,7 +1586,7 @@ function _Chat() {
           const imagesData: string[] = [];
           for (let i = 0; i < files.length; i++) {
             const file = event.target.files[i];
-            uploadImageRemote(file)
+            uploadChatImage(file)
               .then((dataUrl) => {
                 imagesData.push(dataUrl);
                 if (

@@ -3,6 +3,24 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-10 - Account-scoped chat persistence and local image storage
+
+### Completed
+
+- Added `ChatSession` and `ChatFile` Prisma models plus migration `20260710120000_add_account_chat_persistence`.
+- Added authenticated chat-session and chat-file APIs. Every session/file query uses the user resolved from the existing Session Cookie; file reads are private and never expose storage paths.
+- Chat snapshots are stored as one JSON document per session. Inline Base64 and legacy `/api/cache/` image references are removed before database persistence; uploaded image bytes stay under `CHAT_UPLOAD_DIR/<userId>/<sessionId>/` and PostgreSQL stores metadata only.
+- Chat Zustand state now loads from `/api/chat/sessions` after authentication, clears on logout, and no longer restores sessions from the account-shared IndexedDB key. New sessions and debounced final chat changes save snapshots to the database.
+- Chat image uploads save the session first, upload to `/api/chat/files`, persist a protected file URL in the snapshot, then reuse the existing Cookie-authenticated Base64 conversion for model requests.
+- Added `CHAT_UPLOAD_DIR=/data/chat-uploads` to `.env.template` and bind-mounted `./data/chat-uploads` for both Docker app profiles. Old IndexedDB chat history is intentionally not migrated.
+
+### Verification
+
+- Prettier formatted all touched TS/TSX/YAML files; Prisma schema has no Prettier parser.
+- `prisma validate`, `prisma generate`, and `tsc --noEmit --pretty false` passed.
+- `test/chat-snapshot.test.ts` passed.
+- Did not start Docker, apply a database migration, open a browser, call a model API, or send SMS.
+
 ## 2026-07-09 - SMS login error message split
 
 ### Completed

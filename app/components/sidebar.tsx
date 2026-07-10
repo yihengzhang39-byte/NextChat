@@ -339,8 +339,12 @@ export function SideBar(props: { className?: string }) {
                 icon={<ReturnIcon />}
                 shadow
                 onClick={async () => {
-                  await fetch("/api/auth/logout", { method: "POST" });
-                  navigate(Path.Auth);
+                  try {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                  } finally {
+                    chatStore.resetForLogout();
+                    navigate(Path.Auth);
+                  }
                 }}
               />
             </div>
