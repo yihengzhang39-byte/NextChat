@@ -6,8 +6,6 @@ import {
   OPENAI_BASE_URL,
   ANTHROPIC_BASE_URL,
   GEMINI_BASE_URL,
-  BAIDU_BASE_URL,
-  BAIDU_V2_BASE_URL,
   BYTEDANCE_BASE_URL,
   ALIBABA_BASE_URL,
   TENCENT_BASE_URL,
@@ -28,7 +26,6 @@ import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
 import { getModelProvider } from "../utils/model";
-import { isBaiduV2Key } from "../utils/baidu";
 
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
 
@@ -39,8 +36,6 @@ const DEFAULT_OPENAI_URL = isApp ? OPENAI_BASE_URL : ApiPath.OpenAI;
 const DEFAULT_GOOGLE_URL = isApp ? GEMINI_BASE_URL : ApiPath.Google;
 
 const DEFAULT_ANTHROPIC_URL = isApp ? ANTHROPIC_BASE_URL : ApiPath.Anthropic;
-
-const DEFAULT_BAIDU_URL = isApp ? BAIDU_BASE_URL : ApiPath.Baidu;
 
 const DEFAULT_BYTEDANCE_URL = isApp ? BYTEDANCE_BASE_URL : ApiPath.ByteDance;
 
@@ -70,7 +65,7 @@ const DEFAULT_ACCESS_STATE = {
   accessCode: "",
   useCustomConfig: false,
 
-  provider: ServiceProvider.Baidu,
+  provider: ServiceProvider.Iflytek,
 
   // openai
   openaiUrl: DEFAULT_OPENAI_URL,
@@ -91,11 +86,6 @@ const DEFAULT_ACCESS_STATE = {
   anthropicUrl: DEFAULT_ANTHROPIC_URL,
   anthropicApiKey: "",
   anthropicApiVersion: "2023-06-01",
-
-  // baidu
-  baiduUrl: DEFAULT_BAIDU_URL,
-  baiduApiKey: "",
-  baiduSecretKey: "",
 
   // bytedance
   bytedanceUrl: DEFAULT_BYTEDANCE_URL,
@@ -192,15 +182,6 @@ export const useAccessStore = createPersistStore(
       return ensure(get(), ["anthropicApiKey"]);
     },
 
-    isValidBaidu() {
-      // v2 (bce-v3): only API key is required
-      if (isBaiduV2Key(get().baiduApiKey)) {
-        return ensure(get(), ["baiduApiKey"]);
-      }
-      // v1: both API key and secret key are required
-      return ensure(get(), ["baiduApiKey", "baiduSecretKey"]);
-    },
-
     isValidByteDance() {
       return ensure(get(), ["bytedanceApiKey"]);
     },
@@ -244,7 +225,6 @@ export const useAccessStore = createPersistStore(
         this.isValidAzure() ||
         this.isValidGoogle() ||
         this.isValidAnthropic() ||
-        this.isValidBaidu() ||
         this.isValidByteDance() ||
         this.isValidAlibaba() ||
         this.isValidTencent() ||

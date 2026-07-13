@@ -293,3 +293,10 @@ Some image-only Excel workbooks contain stale absolute C-column paths whose dire
 - Old rows such as `A1a01.png` can resolve to actual local files such as `A1a01.jpg` when both share the same stem.
 - Real model calls still require a running local NextChat backend with valid Iflytek environment variables.
 - The image-only flow remains isolated from the existing pure-text and image+text batch scripts.
+
+## 2026-07-13: Iflytek imagev4 is the only product model
+
+- Baidu was a temporary integration model and is removed from product runtime, configuration, and UI.
+- New chats and requests use `image@Iflytek`; model and Provider switching are removed.
+- The existing imagev4 path handles both text-only and image-plus-text questions.
+- Historical chat snapshots are neither migrated nor modified.

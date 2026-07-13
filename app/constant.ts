@@ -16,10 +16,6 @@ export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
 
-export const BAIDU_BASE_URL = "https://aip.baidubce.com";
-export const BAIDU_V2_BASE_URL = "https://qianfan.baidubce.com";
-export const BAIDU_OATUH_URL = `${BAIDU_BASE_URL}/oauth/2.0/token`;
-
 export const BYTEDANCE_BASE_URL = "https://ark.cn-beijing.volces.com";
 
 export const ALIBABA_BASE_URL = "https://dashscope.aliyuncs.com/api/";
@@ -69,7 +65,6 @@ export enum ApiPath {
   OpenAI = "/api/openai",
   Anthropic = "/api/anthropic",
   Google = "/api/google",
-  Baidu = "/api/baidu",
   ByteDance = "/api/bytedance",
   Alibaba = "/api/alibaba",
   Tencent = "/api/tencent",
@@ -130,7 +125,6 @@ export enum ServiceProvider {
   Azure = "Azure",
   Google = "Google",
   Anthropic = "Anthropic",
-  Baidu = "Baidu",
   ByteDance = "ByteDance",
   Alibaba = "Alibaba",
   Tencent = "Tencent",
@@ -146,15 +140,10 @@ export enum ServiceProvider {
 
 // Google API safety settings, see https://ai.google.dev/gemini-api/docs/safety-settings
 // BLOCK_NONE will not block any content, and BLOCK_ONLY_HIGH will block only high-risk content.
-export const PRODUCT_DEFAULT_MODEL = "ernie-5.0";
-export const PRODUCT_DEFAULT_PROVIDER = ServiceProvider.Baidu;
+export const PRODUCT_DEFAULT_MODEL = "image";
+export const PRODUCT_DEFAULT_PROVIDER = ServiceProvider.Iflytek;
 export const PRODUCT_DEFAULT_MODEL_WITH_PROVIDER = `${PRODUCT_DEFAULT_MODEL}@${PRODUCT_DEFAULT_PROVIDER}`;
-export const PRODUCT_MODEL_ALLOWLIST = new Set([
-  PRODUCT_DEFAULT_MODEL_WITH_PROVIDER,
-  `${PRODUCT_DEFAULT_MODEL}@baidu`,
-  `image@${ServiceProvider.Iflytek}`,
-  "image@iflytek",
-]);
+export const PRODUCT_MODEL_ALLOWLIST = new Set([PRODUCT_DEFAULT_MODEL_WITH_PROVIDER]);
 export enum GoogleSafetySettingsThreshold {
   BLOCK_NONE = "BLOCK_NONE",
   BLOCK_ONLY_HIGH = "BLOCK_ONLY_HIGH",
@@ -167,7 +156,6 @@ export enum ModelProvider {
   GPT = "GPT",
   GeminiPro = "GeminiPro",
   Claude = "Claude",
-  Ernie = "Ernie",
   Doubao = "Doubao",
   Qwen = "Qwen",
   Hunyuan = "Hunyuan",
@@ -214,32 +202,6 @@ export const Google = {
   ExampleEndpoint: "https://generativelanguage.googleapis.com/",
   ChatPath: (modelName: string) =>
     `v1beta/models/${modelName}:streamGenerateContent`,
-};
-
-export const Baidu = {
-  ExampleEndpoint: BAIDU_BASE_URL,
-  V2ExampleEndpoint: BAIDU_V2_BASE_URL,
-  ChatPath: (modelName: string) => {
-    // v2 API (OpenAI-compatible) — all v2 models use the same endpoint
-    if (modelName === "ernie-5.0") {
-      return "v2/chat/completions";
-    }
-    // v1 API (legacy per-model endpoints)
-    let endpoint = modelName;
-    if (modelName === "ernie-4.0-8k") {
-      endpoint = "completions_pro";
-    }
-    if (modelName === "ernie-4.0-8k-preview-0518") {
-      endpoint = "completions_adv_pro";
-    }
-    if (modelName === "ernie-3.5-8k") {
-      endpoint = "completions";
-    }
-    if (modelName === "ernie-speed-8k") {
-      endpoint = "ernie_speed";
-    }
-    return `rpc/2.0/ai_custom/v1/wenxinworkshop/chat/${endpoint}`;
-  },
 };
 
 export const ByteDance = {
@@ -607,21 +569,6 @@ const anthropicModels = [
   "claude-opus-4-20250514",
 ];
 
-const baiduModels = [
-  "ernie-5.0",
-  "ernie-4.0-turbo-8k",
-  "ernie-4.0-8k",
-  "ernie-4.0-8k-preview",
-  "ernie-4.0-8k-preview-0518",
-  "ernie-4.0-8k-latest",
-  "ernie-3.5-8k",
-  "ernie-3.5-8k-0205",
-  "ernie-speed-128k",
-  "ernie-speed-8k",
-  "ernie-lite-8k",
-  "ernie-tiny-8k",
-];
-
 const bytedanceModels = [
   "Doubao-lite-4k",
   "Doubao-lite-32k",
@@ -667,14 +614,7 @@ const moonshotModels = [
   "kimi-latest",
 ];
 
-const iflytekModels = [
-  "image",
-  "general",
-  "generalv3",
-  "pro-128k",
-  "generalv3.5",
-  "4.0Ultra",
-];
+const iflytekModels = ["image"];
 
 const deepseekModels = ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"];
 
@@ -812,17 +752,6 @@ const UPSTREAM_DEFAULT_MODELS = [
       providerName: "Anthropic",
       providerType: "anthropic",
       sorted: 4,
-    },
-  })),
-  ...baiduModels.map((name) => ({
-    name,
-    available: true,
-    sorted: seq++,
-    provider: {
-      id: "baidu",
-      providerName: "Baidu",
-      providerType: "baidu",
-      sorted: 5,
     },
   })),
   ...bytedanceModels.map((name) => ({

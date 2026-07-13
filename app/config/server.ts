@@ -170,7 +170,6 @@ export const getServerSideConfig = () => {
   const isAnthropic = !!process.env.ANTHROPIC_API_KEY;
   const isTencent = !!process.env.TENCENT_API_KEY;
 
-  const isBaidu = !!process.env.BAIDU_API_KEY;
   const isBytedance = !!process.env.BYTEDANCE_API_KEY;
   const isAlibaba = !!process.env.ALIBABA_API_KEY;
   const isMoonshot = !!process.env.MOONSHOT_API_KEY;
@@ -214,11 +213,6 @@ export const getServerSideConfig = () => {
     anthropicApiKey: getApiKey(process.env.ANTHROPIC_API_KEY),
     anthropicApiVersion: process.env.ANTHROPIC_API_VERSION,
     anthropicUrl: process.env.ANTHROPIC_URL,
-
-    isBaidu,
-    baiduUrl: process.env.BAIDU_URL,
-    baiduApiKey: getApiKey(process.env.BAIDU_API_KEY),
-    baiduSecretKey: process.env.BAIDU_SECRET_KEY,
 
     isBytedance,
     bytedanceApiKey: getApiKey(process.env.BYTEDANCE_API_KEY),

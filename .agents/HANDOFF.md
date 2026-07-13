@@ -267,3 +267,9 @@ http://localhost:3000
 - No prompt column is read; a fixed default image-description instruction is sent with each image unless overridden by `--prompt`.
 - Verification so far: help output, Python bytecode compilation, and a local `--dry-run` path-remapping check passed; no real backend/model call was executed.
 
+**2026-07-13 update - Iflytek single-model product:**
+
+- New chats and all new chat requests use `image@Iflytek`; the existing imagev4 WebSocket proxy remains responsible for text-only and image-plus-text requests.
+- Baidu has no user-reachable new-request path, model selector, Provider selector, or environment configuration.
+- Historical database chat data was not migrated or modified. Runtime validation remains user work.
+

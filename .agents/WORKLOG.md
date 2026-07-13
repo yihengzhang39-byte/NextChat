@@ -743,3 +743,9 @@ python scripts\batch_eval_iflytek.py `
 - Start the local NextChat backend with valid Iflytek credentials.
 - Run the image-only script on a small workbook and spot-check that C-column old paths map to the real image directory and that replies land in the intended reply column.
 
+## 2026-07-13 - Iflytek single-model product
+
+- Removed the Baidu runtime proxy, client implementation, credentials, model allowlist entries, Docker injection, and visible configuration entry points.
+- Fixed product defaults, new chat configuration, request dispatch, and image upload recognition to `image@Iflytek` / `imagev4`; no historical sessions were migrated or changed.
+- Static review covered Baidu/ERNIE configuration and routing references plus `image@Iflytek`, `DEFAULT_MODEL`, and `VISION_MODELS`. Runtime verification was not run per instruction.
+

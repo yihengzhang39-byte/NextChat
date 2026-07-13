@@ -54,7 +54,6 @@ import Link from "next/link";
 import {
   Anthropic,
   Azure,
-  Baidu,
   Tencent,
   ByteDance,
   Alibaba,
@@ -969,60 +968,6 @@ export function Settings() {
     </>
   );
 
-  const baiduConfigComponent = accessStore.provider ===
-    ServiceProvider.Baidu && (
-    <>
-      <ListItem
-        title={Locale.Settings.Access.Baidu.Endpoint.Title}
-        subTitle={Locale.Settings.Access.Baidu.Endpoint.SubTitle}
-      >
-        <input
-          aria-label={Locale.Settings.Access.Baidu.Endpoint.Title}
-          type="text"
-          value={accessStore.baiduUrl}
-          placeholder={Baidu.ExampleEndpoint}
-          onChange={(e) =>
-            accessStore.update(
-              (access) => (access.baiduUrl = e.currentTarget.value),
-            )
-          }
-        ></input>
-      </ListItem>
-      <ListItem
-        title={Locale.Settings.Access.Baidu.ApiKey.Title}
-        subTitle={Locale.Settings.Access.Baidu.ApiKey.SubTitle}
-      >
-        <PasswordInput
-          aria-label={Locale.Settings.Access.Baidu.ApiKey.Title}
-          value={accessStore.baiduApiKey}
-          type="text"
-          placeholder={Locale.Settings.Access.Baidu.ApiKey.Placeholder}
-          onChange={(e) => {
-            accessStore.update(
-              (access) => (access.baiduApiKey = e.currentTarget.value),
-            );
-          }}
-        />
-      </ListItem>
-      <ListItem
-        title={Locale.Settings.Access.Baidu.SecretKey.Title}
-        subTitle={Locale.Settings.Access.Baidu.SecretKey.SubTitle}
-      >
-        <PasswordInput
-          aria-label={Locale.Settings.Access.Baidu.SecretKey.Title}
-          value={accessStore.baiduSecretKey}
-          type="text"
-          placeholder={Locale.Settings.Access.Baidu.SecretKey.Placeholder}
-          onChange={(e) => {
-            accessStore.update(
-              (access) => (access.baiduSecretKey = e.currentTarget.value),
-            );
-          }}
-        />
-      </ListItem>
-    </>
-  );
-
   const tencentConfigComponent = accessStore.provider ===
     ServiceProvider.Tencent && (
     <>
@@ -1818,101 +1763,6 @@ export function Settings() {
         <List id={SlotID.CustomModel}>
           {saasStartComponent}
           {accessCodeComponent}
-
-          {!accessStore.hideUserApiKey && (
-            <>
-              {useCustomConfigComponent}
-
-              {accessStore.useCustomConfig && (
-                <>
-                  <ListItem
-                    title={Locale.Settings.Access.Provider.Title}
-                    subTitle={Locale.Settings.Access.Provider.SubTitle}
-                  >
-                    <Select
-                      aria-label={Locale.Settings.Access.Provider.Title}
-                      value={accessStore.provider}
-                      onChange={(e) => {
-                        accessStore.update(
-                          (access) =>
-                            (access.provider = e.target
-                              .value as ServiceProvider),
-                        );
-                      }}
-                    >
-                      {Object.entries(ServiceProvider).map(([k, v]) => (
-                        <option value={v} key={k}>
-                          {k}
-                        </option>
-                      ))}
-                    </Select>
-                  </ListItem>
-
-                  {openAIConfigComponent}
-                  {azureConfigComponent}
-                  {googleConfigComponent}
-                  {anthropicConfigComponent}
-                  {baiduConfigComponent}
-                  {byteDanceConfigComponent}
-                  {alibabaConfigComponent}
-                  {tencentConfigComponent}
-                  {moonshotConfigComponent}
-                  {deepseekConfigComponent}
-                  {stabilityConfigComponent}
-                  {lflytekConfigComponent}
-                  {XAIConfigComponent}
-                  {chatglmConfigComponent}
-                  {siliconflowConfigComponent}
-                  {ai302ConfigComponent}
-                </>
-              )}
-            </>
-          )}
-
-          {!shouldHideBalanceQuery && !clientConfig?.isApp ? (
-            <ListItem
-              title={Locale.Settings.Usage.Title}
-              subTitle={
-                showUsage
-                  ? loadingUsage
-                    ? Locale.Settings.Usage.IsChecking
-                    : Locale.Settings.Usage.SubTitle(
-                        usage?.used ?? "[?]",
-                        usage?.subscription ?? "[?]",
-                      )
-                  : Locale.Settings.Usage.NoAccess
-              }
-            >
-              {!showUsage || loadingUsage ? (
-                <div />
-              ) : (
-                <IconButton
-                  icon={<ResetIcon></ResetIcon>}
-                  text={Locale.Settings.Usage.Check}
-                  onClick={() => checkUsage(true)}
-                />
-              )}
-            </ListItem>
-          ) : null}
-
-          <ListItem
-            title={Locale.Settings.Access.CustomModel.Title}
-            subTitle={Locale.Settings.Access.CustomModel.SubTitle}
-            vertical={true}
-          >
-            <input
-              aria-label={Locale.Settings.Access.CustomModel.Title}
-              style={{ width: "100%", maxWidth: "unset", textAlign: "left" }}
-              type="text"
-              value={config.customModels}
-              placeholder="model1,model2,model3"
-              onChange={(e) =>
-                config.update(
-                  (config) => (config.customModels = e.currentTarget.value),
-                )
-              }
-            ></input>
-          </ListItem>
         </List>
 
         <List>

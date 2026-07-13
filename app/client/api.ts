@@ -14,7 +14,6 @@ import {
 import { ChatGPTApi, DalleRequestPayload } from "./platforms/openai";
 import { GeminiProApi } from "./platforms/google";
 import { ClaudeApi } from "./platforms/anthropic";
-import { ErnieApi } from "./platforms/baidu";
 import { DoubaoApi } from "./platforms/bytedance";
 import { QwenApi } from "./platforms/alibaba";
 import { HunyuanApi } from "./platforms/tencent";
@@ -144,9 +143,6 @@ export class ClientApi {
       case ModelProvider.Claude:
         this.llm = new ClaudeApi();
         break;
-      case ModelProvider.Ernie:
-        this.llm = new ErnieApi();
-        break;
       case ModelProvider.Doubao:
         this.llm = new DoubaoApi();
         break;
@@ -259,7 +255,6 @@ export function getHeaders(ignoreHeaders: boolean = false) {
     const isGoogle = modelConfig.providerName === ServiceProvider.Google;
     const isAzure = modelConfig.providerName === ServiceProvider.Azure;
     const isAnthropic = modelConfig.providerName === ServiceProvider.Anthropic;
-    const isBaidu = modelConfig.providerName == ServiceProvider.Baidu;
     const isByteDance = modelConfig.providerName === ServiceProvider.ByteDance;
     const isAlibaba = modelConfig.providerName === ServiceProvider.Alibaba;
     const isMoonshot = modelConfig.providerName === ServiceProvider.Moonshot;
@@ -302,7 +297,6 @@ export function getHeaders(ignoreHeaders: boolean = false) {
       isGoogle,
       isAzure,
       isAnthropic,
-      isBaidu,
       isByteDance,
       isAlibaba,
       isMoonshot,
@@ -331,7 +325,6 @@ export function getHeaders(ignoreHeaders: boolean = false) {
     isGoogle,
     isAzure,
     isAnthropic,
-    isBaidu,
     isByteDance,
     isAlibaba,
     isMoonshot,
@@ -344,9 +337,6 @@ export function getHeaders(ignoreHeaders: boolean = false) {
     apiKey,
     isEnabledAccessControl,
   } = getConfig();
-  // when using baidu api in app, not set auth header
-  if (isBaidu && clientConfig?.isApp) return headers;
-
   const authHeader = getAuthHeader();
 
   const bearerToken = getBearerToken(
@@ -366,13 +356,14 @@ export function getHeaders(ignoreHeaders: boolean = false) {
 }
 
 export function getClientApi(provider: ServiceProvider): ClientApi {
+  return new ClientApi(ModelProvider.Iflytek);
+
+  /* istanbul ignore next */
   switch (provider) {
     case ServiceProvider.Google:
       return new ClientApi(ModelProvider.GeminiPro);
     case ServiceProvider.Anthropic:
       return new ClientApi(ModelProvider.Claude);
-    case ServiceProvider.Baidu:
-      return new ClientApi(ModelProvider.Ernie);
     case ServiceProvider.ByteDance:
       return new ClientApi(ModelProvider.Doubao);
     case ServiceProvider.Alibaba:

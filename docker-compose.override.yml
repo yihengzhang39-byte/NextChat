@@ -42,11 +42,8 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
-      - BAIDU_API_KEY=${BAIDU_API_KEY}
-      - BAIDU_SECRET_KEY=${BAIDU_SECRET_KEY:-}
-      - BAIDU_URL=${BAIDU_URL:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-ernie-5.0@Baidu}
-      - VISION_MODELS=${VISION_MODELS:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-image@Iflytek}
+      - VISION_MODELS=${VISION_MODELS:-image}
       - XF_APPID=${XF_APPID:-}
       - XF_API_KEY=${XF_API_KEY:-}
       - XF_API_SECRET=${XF_API_SECRET:-}
@@ -79,11 +76,8 @@ services:
       - DATABASE_URL=${DATABASE_URL:-postgresql://iflytek_chat:iflytek_chat_dev@postgres:5432/iflytek_chat?schema=public}
       - CHAT_UPLOAD_DIR=${CHAT_UPLOAD_DIR:-/data/chat-uploads}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
-      - BAIDU_API_KEY=${BAIDU_API_KEY}
-      - BAIDU_SECRET_KEY=${BAIDU_SECRET_KEY:-}
-      - BAIDU_URL=${BAIDU_URL:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-ernie-5.0@Baidu}
-      - VISION_MODELS=${VISION_MODELS:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-image@Iflytek}
+      - VISION_MODELS=${VISION_MODELS:-image}
       - XF_APPID=${XF_APPID:-}
       - XF_API_KEY=${XF_API_KEY:-}
       - XF_API_SECRET=${XF_API_SECRET:-}

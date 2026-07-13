@@ -24,6 +24,8 @@ import {
   KnowledgeCutOffDate,
   MCP_SYSTEM_TEMPLATE,
   MCP_TOOLS_TEMPLATE,
+  PRODUCT_DEFAULT_MODEL,
+  PRODUCT_DEFAULT_PROVIDER,
   ServiceProvider,
   StoreKey,
   SUMMARIZE_MODEL,
@@ -550,7 +552,11 @@ export const useChatStore = createPersistStore(
         isMcpResponse?: boolean,
       ) {
         const session = get().currentSession();
-        const modelConfig = session.mask.modelConfig;
+        const modelConfig = {
+          ...session.mask.modelConfig,
+          model: PRODUCT_DEFAULT_MODEL as ModelType,
+          providerName: PRODUCT_DEFAULT_PROVIDER,
+        };
 
         // MCP Response no need to fill template
         let mContent: string | MultimodalContent[] = isMcpResponse
@@ -681,7 +687,11 @@ export const useChatStore = createPersistStore(
 
       async getMessagesWithMemory() {
         const session = get().currentSession();
-        const modelConfig = session.mask.modelConfig;
+        const modelConfig = {
+          ...session.mask.modelConfig,
+          model: PRODUCT_DEFAULT_MODEL as ModelType,
+          providerName: PRODUCT_DEFAULT_PROVIDER,
+        };
         const clearContextIndex = session.clearContextIndex ?? 0;
         const messages = session.messages.slice();
         const totalMessageCount = session.messages.length;
