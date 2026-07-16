@@ -118,11 +118,12 @@ interface ModalProps {
   defaultMax?: boolean;
   footer?: React.ReactNode;
   onClose?: () => void;
+  closable?: boolean;
 }
 export function Modal(props: ModalProps) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && props.closable !== false) {
         props.onClose?.();
       }
     };
@@ -153,12 +154,14 @@ export function Modal(props: ModalProps) {
           >
             {isMax ? <MinIcon /> : <MaxIcon />}
           </div>
-          <div
-            className={styles["modal-header-action"]}
-            onClick={props.onClose}
-          >
-            <CloseIcon />
-          </div>
+          {props.closable !== false && (
+            <div
+              className={styles["modal-header-action"]}
+              onClick={props.onClose}
+            >
+              <CloseIcon />
+            </div>
+          )}
         </div>
       </div>
 
@@ -191,12 +194,38 @@ export function showModal(props: ModalProps) {
   };
 
   div.onclick = (e) => {
-    if (e.target === div) {
+    if (props.closable !== false && e.target === div) {
       closeModal();
     }
   };
 
   root.render(<Modal {...props} onClose={closeModal}></Modal>);
+  return closeModal;
+}
+
+export function showAlert(title: string, content: React.ReactNode, confirmText: string) {
+  return new Promise<void>((resolve) => {
+    let close: () => void = () => {};
+    close = showModal({
+      title,
+      closable: false,
+      actions: [
+        <IconButton
+          key="confirm"
+          text={confirmText}
+          type="primary"
+          autoFocus
+          bordered
+          shadow
+          onClick={() => {
+            close();
+            resolve();
+          }}
+        />,
+      ],
+      children: content,
+    });
+  });
 }
 
 export type ToastProps = {

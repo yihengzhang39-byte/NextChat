@@ -3,6 +3,14 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-16: Adult-only chat access after identity verification
+
+- Keep `RealNameStatus` as proof of the two-element result and add independent `AgeVerificationStatus` (`UNKNOWN`, `ADULT`, `MINOR`) for chat eligibility. A verified minor is not an identity-verification failure.
+- Derive the birth date only from the locally validated 18-digit ID after the provider reports success. The 18th birthday is calculated as a calendar anniversary at `00:00:00 Asia/Shanghai`, represented by the corresponding UTC instant for Prisma/PostgreSQL storage. Do not use elapsed-day/year arithmetic or the server time zone.
+- February 29 birthdays become adult at Shanghai midnight on February 28 when the target year is not a leap year; the explicit calendar helper must not rely on `Date` overflow.
+- `getUserChatAccess` is the single server authority for `/api/auth/me`, `/api/identity/status`, and all existing verified-chat guards. It atomically promotes a `MINOR` user to `ADULT` once `adultEligibleAt` is reached.
+- Existing `VERIFIED` records are migration-backfilled to `ADULT` without decrypting or recalculating identity data. Ten filing-test accounts are separately seeded as `VERIFIED + ADULT + FILING_TEST`, with all identity ciphertext/fingerprint/provider fields empty; filing-test login itself remains open to any otherwise valid phone/code.
+
 ## 2026-07-15: Use Aliyun Market for real-name two-element verification
 
 - Use the 贵州数据宝 Aliyun Market identity endpoint through `AliyunMarketIdentityVerificationProvider`, while retaining the existing `IdentityVerificationProvider` boundary and Mock provider for development.

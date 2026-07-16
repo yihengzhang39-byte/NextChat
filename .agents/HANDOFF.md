@@ -1,5 +1,14 @@
 # Handoff
 
+## 2026-07-16 - Adult access restriction
+
+- Apply `20260716130000_add_adult_chat_access` after the preceding identity migrations. It adds `AgeVerificationStatus`, `IdentityVerificationSource`, `displayName`, age timestamps, backfills all existing `realNameStatus=VERIFIED` users to `ADULT`, and upserts the ten filing-test accounts.
+- Normal verified users receive `ADULT` or `MINOR` from the validated ID birth date. `adultEligibleAt` is Shanghai birthday midnight stored as its UTC instant; a Feb 29 birth reaches adulthood on Feb 28 in a non-leap target year. Existing verified users keep access as adults without re-verification.
+- `/api/auth/me` and `/api/identity/status` expose only identity/age access state, `canUseChat`, and `underage_restricted` where applicable. Core Iflytek and ChatSession/ChatFile routes reuse the shared server guard; it upgrades eligible minors atomically.
+- The real-name page and global guard reuse one blocking modal/logout path. Confirming the alert invalidates the session/cookie through the existing logout route, clears frontend chat state, and goes to `/#/auth`; the module-level lock prevents duplicate alerts/logout/navigation during repeated effects.
+- Filing test login remains code/format/feature-flag based for all phones. Only the ten preseeded numbers bypass real-name entry because they are already `VERIFIED + ADULT + FILING_TEST`; their identity fields are empty.
+- No migration, test, build, Docker, database, browser, or real third-party request was run. Run the migration locally, then manually check adult and minor formal/SMS/filing login, refresh/direct routes, protected API 403s, duplicate-alert behavior, the birthday boundary, Feb 29 handling, and all ten test accounts.
+
 ## 2026-07-15 - forced real-name verification
 
 - Phone login still creates the existing `User`/`UserSession`/Cookie only. The shared frontend guard reads `/api/auth/me`, sends unverified users to `/#/auth/real-name`, and admits verified users to chat without duplicating logic between formal and filing-test login.

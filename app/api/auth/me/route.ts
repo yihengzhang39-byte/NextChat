@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromRequest } from "@/app/lib/session";
-import { getIdentityRecord } from "@/app/lib/identity";
+import { getUserChatAccess } from "@/app/lib/identity";
 
 export const runtime = "nodejs";
 
@@ -11,15 +11,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  const identity = await getIdentityRecord(user.id);
+  const access = await getUserChatAccess(user.id);
 
   return NextResponse.json({
     authenticated: true,
+    identityVerificationStatus: access.identityVerificationStatus,
+    ageVerificationStatus: access.ageVerificationStatus,
+    canUseChat: access.canUseChat,
+    ...(access.reason ? { reason: access.reason } : {}),
     user: {
       id: user.id,
       phone: user.phone,
       acceptedTerms: user.acceptedTerms,
-      realNameStatus: identity?.realNameStatus ?? "UNVERIFIED",
+      realNameStatus: access.identityVerificationStatus,
+      ageVerificationStatus: access.ageVerificationStatus,
+      canUseChat: access.canUseChat,
     },
   });
 }

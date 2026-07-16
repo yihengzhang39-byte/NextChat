@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { Path } from "../constant";
 import { IconButton } from "./button";
 import styles from "./auth.module.scss";
+import { handleUnderageRestriction } from "./underage-restriction";
 
 const reasonMessages: Record<string, string> = {
   invalid_real_name: "请输入正确的真实姓名",
@@ -51,6 +52,10 @@ export function RealNameAuthPage() {
         throw new Error(
           reasonMessages[data.reason] ?? data.message ?? "实名认证失败，请稍后重试",
         );
+      }
+      if (data.reason === "underage_restricted") {
+        await handleUnderageRestriction(navigate);
+        return;
       }
       setVerified(true);
     } catch (error) {

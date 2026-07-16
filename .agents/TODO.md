@@ -1,5 +1,12 @@
 # TODO
 
+## Adult access follow-up (2026-07-16)
+
+- [ ] Apply `20260716130000_add_adult_chat_access` after existing Prisma migrations and run Prisma Client generation locally.
+- [ ] Manually verify adult, minor, Shanghai birthday-boundary, and Feb 29 age outcomes through both formal SMS and filing-test login.
+- [ ] Verify one underage alert/logout only, repeated login interception, and 403 `underage_restricted` responses for Iflytek and ChatSession/ChatFile APIs.
+- [ ] Verify the ten preseeded filing-test accounts enter chat directly while a non-preseeded filing-test phone still completes real-name and age checks.
+
 ## Real-name verification follow-up (2026-07-15)
 
 - [x] Select the 贵州数据宝 Aliyun Market ID two-element verification provider.

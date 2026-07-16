@@ -29,6 +29,7 @@ import { type ClientApi, getClientApi } from "../client/api";
 import { useAccessStore, useChatStore } from "../store";
 import clsx from "clsx";
 import { initializeMcpSystem, isMcpEnabled } from "../mcp/actions";
+import { handleUnderageRestriction } from "./underage-restriction";
 
 export function Loading() {
   return null;
@@ -182,7 +183,7 @@ function Screen() {
   const isSd = location.pathname === Path.Sd;
   const isSdNew = location.pathname === Path.SdNew;
   const [authState, setAuthState] = useState<
-    "loading" | "unauthenticated" | "unverified" | "verified"
+    "loading" | "unauthenticated" | "unverified" | "verified" | "restricted"
   >("loading");
   const [checkedPath, setCheckedPath] = useState("");
 
@@ -212,6 +213,13 @@ function Screen() {
           return;
         }
         const data = await res.json();
+        if (data.reason === "underage_restricted") {
+          useChatStore.getState().clearSessions();
+          setAuthState("restricted");
+          setCheckedPath(location.pathname);
+          void handleUnderageRestriction(navigate);
+          return;
+        }
         if (data.user?.realNameStatus === "VERIFIED") {
           setAuthState("verified");
           setCheckedPath(location.pathname);
@@ -240,6 +248,7 @@ function Screen() {
     (authState === "loading" ||
       ((!isAuth && !isFilingTestAuth) && checkedPath !== location.pathname) ||
       (authState === "unauthenticated" && !isAuth && !isFilingTestAuth) ||
+      authState === "restricted" ||
       (authState === "unverified" &&
         !isAuth &&
         !isFilingTestAuth &&

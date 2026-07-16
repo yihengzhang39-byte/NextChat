@@ -3,6 +3,17 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-16 - Adult-only chat access and filing-test account seed
+
+- Added age/source fields, shared Shanghai calendar-age calculation, automatic server-side minor-to-adult promotion, and a migration `20260716130000_add_adult_chat_access`.
+- `/api/auth/me`, `/api/identity/status`, identity completion, Iflytek POST, and all existing ChatSession/ChatFile guards now use the same access state. Underage users receive the stable `underage_restricted` reason and HTTP 403 on protected APIs.
+- Added ten idempotent `FILING_TEST` account seeds with display names and `VERIFIED + ADULT`; no placeholder identity number, encrypted identity field, HMAC, last-four value, provider request ID, provider response, or verification timestamp is written.
+- The shared frontend alert is blocking and idempotent: after “我知道了”, it reuses `/api/auth/logout`, clears chat state, and replaces the route with `/#/auth`. Adult flows and the open filing-test login endpoint are unchanged.
+
+### Verification
+
+- Per instruction, no test, lint, TypeScript check, build, formatter, Prisma command, migration, Docker, database write, local server, browser, SMS, Iflytek, or identity-provider request was run. Static review only.
+
 ## 2026-07-15 - Identity provider safe failure diagnostics
 
 - Added Aliyun Market provider failure logs with only Provider, failure category, HTTP status, provider request ID, and elapsed time; they never include identity input, credentials, signatures, request bodies, or raw responses.

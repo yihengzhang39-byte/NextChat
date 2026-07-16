@@ -4,6 +4,7 @@ import {
   completeIdentityVerification,
   failIdentityVerification,
   getIdentityRecord,
+  getUserChatAccess,
   toIdentityStatusResponse,
   unauthenticatedResponse,
   validateIdentityInput,
@@ -121,6 +122,6 @@ export async function POST(req: NextRequest) {
     return error(reason, databaseCode === "23505" ? 409 : 500);
   }
 
-  const identity = await getIdentityRecord(user.id);
-  return NextResponse.json({ error: false, ...toIdentityStatusResponse(identity!) });
+  const access = await getUserChatAccess(user.id);
+  return NextResponse.json({ error: false, ...toIdentityStatusResponse(access.record!, access) });
 }

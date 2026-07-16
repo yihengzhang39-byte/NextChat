@@ -1,4 +1,7 @@
 import {
+  getAdultEligibleAt,
+  parseIdBirthDate,
+  resolveAgeVerification,
   validateIdNumber,
   validateIdentityInput,
 } from "../app/lib/identity";
@@ -63,4 +66,14 @@ test("accepts leap-day and preserves string identifiers", () => {
   expect(result.success).toBe(true);
   expect(result.normalized).toBe(id);
   expect(validateIdNumber(Number(id)).success).toBe(false);
+});
+
+test("uses Shanghai calendar 18th birthdays, including the Feb 29 rule", () => {
+  const summerBirth = parseIdBirthDate(makeId("20080720"));
+  const leapBirth = parseIdBirthDate(makeId("20080229"));
+  expect(summerBirth).toEqual({ year: 2008, month: 7, day: 20 });
+  expect(getAdultEligibleAt(summerBirth!)).toEqual(new Date("2026-07-19T16:00:00.000Z"));
+  expect(getAdultEligibleAt(leapBirth!)).toEqual(new Date("2026-02-27T16:00:00.000Z"));
+  expect(resolveAgeVerification(makeId("20080720"), new Date("2026-07-19T15:59:59.999Z")).ageVerificationStatus).toBe("MINOR");
+  expect(resolveAgeVerification(makeId("20080720"), new Date("2026-07-19T16:00:00.000Z")).ageVerificationStatus).toBe("ADULT");
 });
