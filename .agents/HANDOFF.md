@@ -1,5 +1,21 @@
 # Handoff
 
+## 2026-07-15 - forced real-name verification
+
+- Phone login still creates the existing `User`/`UserSession`/Cookie only. The shared frontend guard reads `/api/auth/me`, sends unverified users to `/#/auth/real-name`, and admits verified users to chat without duplicating logic between formal and filing-test login.
+- `/api/identity/status` exposes only status and masked metadata. `/api/identity/verify` validates mainland 18-digit IDs, claims `VERIFYING` atomically, calls the configured Provider, and writes AES-256-GCM ciphertext plus an HMAC-unique ID fingerprint only after success.
+- Migration: `20260715110000_add_real_name_verification`. Old data is not preserved, backfilled, or supported; stop services and clear/reinitialize PostgreSQL or its Docker volume before applying the normal migration/initialization flow if using the clean-data approach.
+- Development flow: `IDENTITY_VERIFY_PROVIDER=mock`; choose `IDENTITY_VERIFY_MOCK_MODE=success|mismatch|service_error`. Mock only proves the application flow and is not authoritative identity verification. Production Mock also requires `IDENTITY_VERIFY_ALLOW_MOCK_IN_PRODUCTION=true`; otherwise it fails with a configuration error.
+- Configure a Base64-encoded 32-byte `IDENTITY_DATA_ENCRYPTION_KEY` and a secret `IDENTITY_ID_NUMBER_HMAC_KEY`. Do not reuse, log, or expose them to the browser.
+- Verified access is enforced for Iflytek POST requests and ChatSession/ChatFile APIs. Unauthenticated and real-name-required responses remain distinct.
+- Aliyun Market (贵州数据宝身份证二要素) is now implemented as `IDENTITY_VERIFY_PROVIDER=aliyun_market`. Configure `IDENTITY_VERIFY_ALIYUN_MARKET_APP_KEY`, `IDENTITY_VERIFY_ALIYUN_MARKET_APP_SECRET`, and optionally Host, Path, and timeout in local `.env`; Docker passes these values to both app services.
+- The real provider uses AppKey/AppSecret signing server-side only. `result=1` verifies, `result=2` records mismatch, and every other upstream condition fails closed as a service error. It never falls back to Mock or stores raw provider responses.
+- Provider failure logs now contain only `provider`, category (`timeout`, `network`, `http_error`, `invalid_response`, `service_error`, or `unknown_result`), HTTP status when available, provider request ID when available, and elapsed time. Rebuild/restart the app, submit once manually, then inspect the container log to identify the upstream failure.
+- Mock remains development-only: `IDENTITY_VERIFY_PROVIDER=mock` with `IDENTITY_VERIFY_MOCK_MODE=success|mismatch|service_error`; production Mock still requires its explicit opt-in flag.
+- User next step: fill local Aliyun Market credentials, set the provider to `aliyun_market`, and manually verify the normal identity flow. No real identity request, test, build, lint, TypeScript, Docker, or browser command was run for this change.
+- No test, build, lint, TypeScript, formatter, Prisma, Docker, database, browser, SMS, Iflytek, or Mock request command was run. User verification should cover all three Mock modes, both login paths, refresh/direct URLs/account switching, duplicate ID binding, rate/concurrency behavior, masked status output, and API guards.
+- The Docker TypeScript blocker in /api/identity/verify has been addressed in source: validateIdentityInput now returns a success discriminated union, so the failure error is a guaranteed string. Docker build remains unverified by request.
+
 ## Current Status
 
 **2026-07-10 update - account-scoped chat persistence:**
@@ -273,3 +289,15 @@ http://localhost:3000
 - Baidu has no user-reachable new-request path, model selector, Provider selector, or environment configuration.
 - Historical database chat data was not migrated or modified. Runtime validation remains user work.
 
+
+## 2026-07-16 - Real-name parsing/rate-limit update
+
+- Apply Prisma migration 20260716090000_add_identity_verification_attempts before using the three-minute two-attempt limit.
+- Production parsing requires code 10000 plus data.result. Manually validate results 1, 2, 3, SYSTEM_042, service failure, and the third-attempt limit.
+- Rebuild command: docker compose --profile no-proxy up -d --build. Logs must exclude identity data and raw provider responses.
+
+## 2026-07-16 - Local ID validation correction
+
+- Local validation now accepts trimmed valid 18-digit strings and normalizes lowercase x to X. It requires ASCII structure, a valid birth date, and the standard checksum; it does not use a region-code whitelist.
+- Rebuild with docker compose --profile no-proxy up -d --build. Submit a valid identity value and confirm local validation no longer reports invalid_id_number before an aliyun_market provider log appears.
+- Local failure logs show only stage/boolean metadata and length; they never include identity content.

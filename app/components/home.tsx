@@ -23,6 +23,7 @@ import {
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
 import { AuthPage } from "./auth";
+import { RealNameAuthPage } from "./real-name-auth";
 import { getClientConfig } from "../config/client";
 import { type ClientApi, getClientApi } from "../client/api";
 import { useAccessStore, useChatStore } from "../store";
@@ -176,9 +177,14 @@ function Screen() {
   const isHome = location.pathname === Path.Home;
   const isAuth = location.pathname === Path.Auth;
   const isFilingTestAuth = location.pathname === Path.FilingTestAuth;
+  const isRealNameAuth = location.pathname === Path.RealNameAuth;
   const isLegal = location.pathname.startsWith(Path.Legal);
   const isSd = location.pathname === Path.Sd;
   const isSdNew = location.pathname === Path.SdNew;
+  const [authState, setAuthState] = useState<
+    "loading" | "unauthenticated" | "unverified" | "verified"
+  >("loading");
+  const [checkedPath, setCheckedPath] = useState("");
 
   const isMobileScreen = useMobileScreen();
   const shouldTightBorder =
@@ -189,27 +195,59 @@ function Screen() {
   }, []);
 
   useEffect(() => {
-    if (
-      isAuth ||
-      isFilingTestAuth ||
-      isLegal ||
-      location.pathname === Path.FeedbackAdmin
-    )
+    if (isLegal || location.pathname === Path.FeedbackAdmin) {
+      setAuthState("verified");
+      setCheckedPath(location.pathname);
       return;
+    }
 
+    setAuthState("loading");
     fetch("/api/auth/me")
       .then(async (res) => {
         if (!res.ok) {
-          navigate(Path.Auth);
+          useChatStore.getState().clearSessions();
+          setAuthState("unauthenticated");
+          setCheckedPath(location.pathname);
+          if (!isAuth && !isFilingTestAuth) navigate(Path.Auth);
           return;
         }
         const data = await res.json();
-        if (data.user?.id) {
+        if (data.user?.realNameStatus === "VERIFIED") {
+          setAuthState("verified");
+          setCheckedPath(location.pathname);
           await useChatStore.getState().loadSessions(data.user.id);
+          if (isRealNameAuth) navigate(Path.Chat);
+        } else {
+          useChatStore.getState().clearSessions();
+          setAuthState("unverified");
+          setCheckedPath(location.pathname);
+          if (!isAuth && !isFilingTestAuth && !isRealNameAuth) {
+            navigate(Path.RealNameAuth);
+          }
         }
       })
-      .catch(() => navigate(Path.Auth));
-  }, [isAuth, isFilingTestAuth, isLegal, location.pathname, navigate]);
+      .catch(() => {
+        useChatStore.getState().clearSessions();
+        setAuthState("unauthenticated");
+        setCheckedPath(location.pathname);
+        if (!isAuth && !isFilingTestAuth) navigate(Path.Auth);
+      });
+  }, [isAuth, isFilingTestAuth, isLegal, isRealNameAuth, location.pathname, navigate]);
+
+  if (
+    !isLegal &&
+    location.pathname !== Path.FeedbackAdmin &&
+    (authState === "loading" ||
+      ((!isAuth && !isFilingTestAuth) && checkedPath !== location.pathname) ||
+      (authState === "unauthenticated" && !isAuth && !isFilingTestAuth) ||
+      (authState === "unverified" &&
+        !isAuth &&
+        !isFilingTestAuth &&
+        !isRealNameAuth) ||
+      (authState === "verified" && isRealNameAuth))
+  ) {
+    return null;
+  }
 
   if (isArtifact) {
     return (
@@ -221,6 +259,7 @@ function Screen() {
   const renderContent = () => {
     if (isAuth) return <AuthPage />;
     if (isFilingTestAuth) return <AuthPage filingTest />;
+    if (isRealNameAuth) return <RealNameAuthPage />;
     if (isLegal) {
       return (
         <Routes>

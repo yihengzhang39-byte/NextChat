@@ -3,6 +3,44 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-15 - Identity provider safe failure diagnostics
+
+- Added Aliyun Market provider failure logs with only Provider, failure category, HTTP status, provider request ID, and elapsed time; they never include identity input, credentials, signatures, request bodies, or raw responses.
+- Confirmed the running container receives all real-provider settings, and can resolve and complete TLS to the provider host. No real identity request was sent during diagnosis.
+
+## 2026-07-15 - Aliyun Market two-element identity provider
+
+- Added the Guizhou Data Treasure Aliyun Market provider behind the existing `IdentityVerificationProvider`; `/api/identity/verify` continues to own validation, concurrency, status changes, encryption, and persistence.
+- The server signs UTF-8 form POST requests with AppKey/AppSecret HMAC-SHA256 canonical headers. `result` `1` maps to verified, `2` to mismatch, and `3` plus all transport, HTTP, JSON, signature, quota, and unknown-result failures to service unavailable.
+- Added server-only environment typing, template entries, and both Docker app-service pass-throughs. Missing production credentials fail as configuration errors and never fall back to Mock.
+- Replaced hard-coded credentials and test identity data in `test/test-id.py` with environment reads; the script remains a signing reference only.
+
+### Verification
+
+- Per instruction, no test, TypeScript, lint, build, Docker, Mock, or real identity-provider request was run. Static source and diff review only.
+
+## 2026-07-15 - Identity input TypeScript narrowing fix
+
+- Defined validateIdentityInput as a success: true | false discriminated union.
+- /api/identity/verify now narrows the failure branch before using its guaranteed string error; successful fields alone are passed to the provider and persistence flow.
+- Per instruction, no Docker, build, lint, test, TypeScript, or other verification command was run.
+
+## 2026-07-15 - Forced real-name verification after phone login
+
+### Completed
+
+- Extended the existing `User` with real-name status, encrypted identity fields, an HMAC-unique ID fingerprint, masked-display data, provider/request metadata, failure reason, and attempt timestamp; added migration `20260715110000_add_real_name_verification`.
+- Added AES-256-GCM/HMAC server helpers, full mainland 18-digit ID date/checksum validation, `IdentityVerificationProvider`, and controllable Mock results (`success`, `mismatch`, `service_error`). Production Mock requires explicit opt-in.
+- Added authenticated `/api/identity/status` and `/api/identity/verify`, database-backed concurrent/rapid-submit protection, encrypted writes only after success, and stable frontend reasons.
+- Added `/#/auth/real-name` and a four-state auth/real-name guard shared by formal and filing-test login. Sensitive form fields remain component-local only.
+- Required `VERIFIED` on Iflytek POST requests and all ChatSession/ChatFile list/read/write/delete/upload paths, while login, logout, status, identity, and legal paths remain available as specified.
+- Added the five identity environment variables to `.env.template`, Docker app-service injection, and server env typings.
+
+### Verification
+
+- Per instruction, no tests, TypeScript, lint, formatting, build, Prisma validation/generation/migration, Docker, browser, SMS, Iflytek, database, or Mock API command was run. Static reference/config/diff review only.
+- Existing database compatibility/backfill was intentionally not implemented. The user must stop services, clear/reinitialize PostgreSQL or its Docker volume if desired, apply the new migration through the normal project initialization flow, generate Prisma Client, and verify locally.
+
 ## 2026-07-10 - Account-scoped chat persistence and local image storage
 
 ### Completed
@@ -749,3 +787,18 @@ python scripts\batch_eval_iflytek.py `
 - Fixed product defaults, new chat configuration, request dispatch, and image upload recognition to `image@Iflytek` / `imagev4`; no historical sessions were migrated or changed.
 - Static review covered Baidu/ERNIE configuration and routing references plus `image@Iflytek`, `DEFAULT_MODEL`, and `VISION_MODELS`. Runtime verification was not run per instruction.
 
+
+## 2026-07-16 - Real-name response parsing and rate limit
+
+- Fixed formal Aliyun parsing to require code 10000 and data.result; conflicting legacy and data results fail closed.
+- Maps results 1/2/3 to verified/mismatch/service unavailable and SYSTEM_042 to invalid_idcard. Extra personal fields are ignored.
+- Added persistent IdentityVerificationAttempt records and atomic three-minute/two-attempt rate limiting.
+- Restored failIdentityVerification and completeIdentityVerification after accidental identity.ts truncation; verified data remains encrypted before persistence.
+- Added parser unit coverage. No real provider request, Docker, browser, or database operation was run.
+
+## 2026-07-16 - Local ID-number validation false rejection
+
+- Browser payload was confirmed complete; the real provider was not reached because local validation returned invalid_id_number.
+- Root cause: the basic format regex in identity.ts contained an accidental literal backtick before the digit class, so valid values failed before date/checksum validation.
+- Replaced it with a string-only validator: trim, lowercase-x normalization, ASCII format, strict UTC date, and GB 11643 checksum. No region whitelist is applied.
+- Added redacted validation-stage logs and generated-fixture unit coverage. No real provider request, Docker, browser, database, migration, or test command was run.

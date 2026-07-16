@@ -7,7 +7,7 @@ import {
   writeChatFile,
 } from "@/app/lib/chat-storage";
 import { prisma } from "@/app/lib/db";
-import { getCurrentUserFromRequest } from "@/app/lib/session";
+import { getCurrentVerifiedUser } from "@/app/lib/identity";
 
 export const runtime = "nodejs";
 
@@ -20,13 +20,9 @@ function safeOriginalName(name: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUserFromRequest(req);
-  if (!user) {
-    return NextResponse.json(
-      { error: true, message: "未登录" },
-      { status: 401 },
-    );
-  }
+  const access = await getCurrentVerifiedUser(req);
+  if (access.response) return access.response;
+  const user = access.user!;
 
   const formData = await req.formData().catch(() => null);
   const sessionId = String(formData?.get("sessionId") ?? "");

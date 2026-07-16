@@ -15,18 +15,44 @@ enum FeedbackStatus {
   CLOSED
 }
 
+enum RealNameStatus {
+  UNVERIFIED
+  VERIFYING
+  VERIFIED
+  FAILED
+}
+
 model User {
-  id             String        @id @default(cuid())
-  phone          String        @unique
-  acceptedTerms  Boolean       @default(false)
-  acceptedAt     DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  sessions       UserSession[]
-  smsCodes       SmsCode[]
-  feedbacks      Feedback[]
-  chatSessions   ChatSession[]
-  chatFiles      ChatFile[]
+  id                        String         @id @default(cuid())
+  phone                     String         @unique
+  acceptedTerms             Boolean        @default(false)
+  acceptedAt                DateTime?
+  realNameStatus            RealNameStatus @default(UNVERIFIED)
+  realNameCiphertext        String?
+  idNumberCiphertext        String?
+  idNumberHmac              String?        @unique
+  idNumberLast4             String?
+  realNameVerifiedAt        DateTime?
+  realNameVerifyProvider    String?
+  realNameVerifyRequestId   String?
+  realNameLastFailureReason String?
+  realNameLastAttemptAt     DateTime?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  sessions                  UserSession[]
+  smsCodes                  SmsCode[]
+  feedbacks                 Feedback[]
+  chatSessions              ChatSession[]
+  chatFiles                 ChatFile[]
+  identityVerificationAttempts IdentityVerificationAttempt[]
+}
+
+model IdentityVerificationAttempt {
+  id String @id
+  userId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
 }
 
 model SmsCode {

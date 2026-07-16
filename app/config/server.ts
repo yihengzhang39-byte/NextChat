@@ -109,6 +109,17 @@ declare global {
       DEFAULT_INPUT_TEMPLATE?: string;
 
       ENABLE_MCP?: string; // enable mcp functionality
+
+      IDENTITY_VERIFY_PROVIDER?: string;
+      IDENTITY_VERIFY_MOCK_MODE?: string;
+      IDENTITY_VERIFY_ALLOW_MOCK_IN_PRODUCTION?: string;
+      IDENTITY_VERIFY_ALIYUN_MARKET_APP_KEY?: string;
+      IDENTITY_VERIFY_ALIYUN_MARKET_APP_SECRET?: string;
+      IDENTITY_VERIFY_ALIYUN_MARKET_HOST?: string;
+      IDENTITY_VERIFY_ALIYUN_MARKET_PATH?: string;
+      IDENTITY_VERIFY_ALIYUN_MARKET_TIMEOUT_MS?: string;
+      IDENTITY_DATA_ENCRYPTION_KEY?: string;
+      IDENTITY_ID_NUMBER_HMAC_KEY?: string;
     }
   }
 }

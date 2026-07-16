@@ -8,6 +8,7 @@ import {
 } from "@/app/constant";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/api/auth";
+import { getCurrentVerifiedUser } from "@/app/lib/identity";
 import { isModelNotavailableInServer } from "@/app/utils/model";
 import { createHmac, randomUUID } from "crypto";
 
@@ -78,6 +79,11 @@ export async function handle(
 
   if (req.method === "OPTIONS") {
     return NextResponse.json({ body: "OK" }, { status: 200 });
+  }
+
+  if (req.method === "POST") {
+    const access = await getCurrentVerifiedUser(req);
+    if (access.response) return access.response;
   }
 
   const authResult = auth(req, ModelProvider.Iflytek);

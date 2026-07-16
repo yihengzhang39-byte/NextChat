@@ -3,6 +3,22 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-15: Use Aliyun Market for real-name two-element verification
+
+- Use the 贵州数据宝 Aliyun Market identity endpoint through `AliyunMarketIdentityVerificationProvider`, while retaining the existing `IdentityVerificationProvider` boundary and Mock provider for development.
+- Sign requests server-side with the provider-specific AppKey/AppSecret. Do not reuse Aliyun SMS AccessKey settings or expose either credential to the browser.
+- Map only provider `result=1` to verified and `result=2` to mismatch. Treat `result=3`, malformed responses, non-2xx statuses, network failures, quota/rate failures, and unknown results as service failures without Mock fallback.
+- Persist only the existing provider/request correlation fields. Do not store or log third-party raw requests or responses.
+- Provider failure diagnostics are limited to the Provider name, failure category, HTTP status, provider request ID, and elapsed time; no identity input, credential, signature, request body, or raw response is logged.
+
+## 2026-07-15: Real-name verification extends the existing phone identity
+
+- Keep real-name state on the existing `User`; phone login and real-name verification are consecutive, independent steps using the existing Session Cookie.
+- Hide vendor details behind `IdentityVerificationProvider`. Mock is development/flow validation only, never an authoritative check, and production cannot use it without explicit opt-in.
+- Encrypt full names and ID numbers with server-side AES-256-GCM. Use a keyed HMAC with a database unique constraint for one-ID-per-account binding; retain only the last four ID digits separately.
+- Enforce verification in both the frontend route guard and core chat APIs. A UI redirect is not a security boundary.
+- Do not backfill or retain old database data for this feature. Do not modify the user agreement, privacy policy, or legal-document routes/content.
+
 ## 2026-07-10: Persist Chat by Account Snapshot and Protected Local Files
 
 ### Context
@@ -300,3 +316,16 @@ Some image-only Excel workbooks contain stale absolute C-column paths whose dire
 - New chats and requests use `image@Iflytek`; model and Provider switching are removed.
 - The existing imagev4 path handles both text-only and image-plus-text questions.
 - Historical chat snapshots are neither migrated nor modified.
+
+## 2026-07-16: Fail-closed Aliyun parsing and persistent rate limit
+
+- Success requires code 10000 and data.result equal to 1; do not use message as a success signal.
+- SYSTEM_042 maps by business code to invalid_idcard. Birthday, address, and sex are not stored, returned, or logged.
+- Use persistent attempt records and a locked User row for the three-minute, two-attempt rate limit; parallel requests cannot exceed the limit.
+- Provider failures never fall back to Mock.
+
+## 2026-07-16: Keep local identity validation strict and string-only
+
+- Treat ID numbers only as strings: trim input and normalize lowercase x to X. Never coerce them to JavaScript numbers.
+- Retain ASCII format, birth-date, and GB 11643 checksum checks before the provider. Do not add incomplete region-code allowlists.
+- Validation diagnostics may contain stage, length, and booleans only; identity contents and derived portions are prohibited.

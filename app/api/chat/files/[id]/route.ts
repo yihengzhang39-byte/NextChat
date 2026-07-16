@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readChatFile } from "@/app/lib/chat-storage";
 import { prisma } from "@/app/lib/db";
-import { getCurrentUserFromRequest } from "@/app/lib/session";
+import { getCurrentVerifiedUser } from "@/app/lib/identity";
 
 export const runtime = "nodejs";
 
@@ -9,13 +9,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const user = await getCurrentUserFromRequest(req);
-  if (!user) {
-    return NextResponse.json(
-      { error: true, message: "未登录" },
-      { status: 401 },
-    );
-  }
+  const access = await getCurrentVerifiedUser(req);
+  if (access.response) return access.response;
+  const user = access.user!;
 
   const chatFile = await prisma.chatFile.findFirst({
     where: { id: params.id, userId: user.id },

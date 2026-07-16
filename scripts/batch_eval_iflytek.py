@@ -283,6 +283,19 @@ async def request_with_retries(
             )
         except Exception as exc:  # noqa: BLE001 - keep one-row failures isolated.
             last_error = f"{type(exc).__name__}: {exc}"
+
+            # 讯飞 code=10013 表示内容安全审核拒答。
+            # 这类响应属于有效的模型拒答，不按接口失败处理；
+            # 提取 message= 与 sid= 之间的正文并写入回复列。
+            refusal_reply = extract_iflytek_10013_reply(last_error)
+            if refusal_reply:
+                return Result(
+                    row=job.row,
+                    status="success",
+                    reply=refusal_reply,
+                    latency_seconds=time.perf_counter() - started_at,
+                )
+
             if attempt < attempts:
                 await asyncio.sleep(min(2 ** (attempt - 1), 5))
 
@@ -292,6 +305,23 @@ async def request_with_retries(
         latency_seconds=time.perf_counter() - started_at,
         error=last_error,
     )
+
+
+def extract_iflytek_10013_reply(error_text: str) -> str:
+    """Extract the refusal message from an Iflytek code=10013 error."""
+    if "code=10013" not in error_text or "message=" not in error_text:
+        return ""
+
+    message = error_text.split("message=", 1)[1]
+
+    # Typical format: message=<refusal text>, sid=<request id>
+    # rsplit is used so commas inside the refusal text are preserved.
+    if ", sid=" in message:
+        message = message.rsplit(", sid=", 1)[0]
+    elif ",sid=" in message:
+        message = message.rsplit(",sid=", 1)[0]
+
+    return message.strip()
 
 
 def build_api_url(base_url: str, api_path: str) -> str:

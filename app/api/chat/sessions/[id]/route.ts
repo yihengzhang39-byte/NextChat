@@ -1,7 +1,7 @@
 import { Prisma } from "@/app/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/db";
-import { getCurrentUserFromRequest } from "@/app/lib/session";
+import { getCurrentVerifiedUser } from "@/app/lib/identity";
 import { removeChatSessionFiles } from "@/app/lib/chat-storage";
 import { sanitizeChatSnapshot } from "@/app/utils/chat-snapshot";
 
@@ -12,22 +12,16 @@ function isValidSessionId(id: string) {
 }
 
 async function currentUser(req: NextRequest) {
-  const user = await getCurrentUserFromRequest(req);
-  if (!user) return null;
-  return user;
+  return getCurrentVerifiedUser(req);
 }
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const user = await currentUser(req);
-  if (!user) {
-    return NextResponse.json(
-      { error: true, message: "未登录" },
-      { status: 401 },
-    );
-  }
+  const access = await currentUser(req);
+  if (access.response) return access.response;
+  const user = access.user!;
 
   const session = await prisma.chatSession.findFirst({
     where: { id: params.id, userId: user.id },
@@ -46,13 +40,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const user = await currentUser(req);
-  if (!user) {
-    return NextResponse.json(
-      { error: true, message: "未登录" },
-      { status: 401 },
-    );
-  }
+  const access = await currentUser(req);
+  if (access.response) return access.response;
+  const user = access.user!;
   if (!isValidSessionId(params.id)) {
     return NextResponse.json(
       { error: true, message: "会话 ID 无效" },
@@ -142,13 +132,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const user = await currentUser(req);
-  if (!user) {
-    return NextResponse.json(
-      { error: true, message: "未登录" },
-      { status: 401 },
-    );
-  }
+  const access = await currentUser(req);
+  if (access.response) return access.response;
+  const user = access.user!;
 
   const session = await prisma.chatSession.findFirst({
     where: { id: params.id, userId: user.id },

@@ -1,5 +1,14 @@
 # TODO
 
+## Real-name verification follow-up (2026-07-15)
+
+- [x] Select the 贵州数据宝 Aliyun Market ID two-element verification provider.
+- [x] Implement the real `IdentityVerificationProvider` and map vendor errors to internal results. Production credentials still need local configuration.
+- [ ] Rebuild the app, submit one real verification manually, and inspect the safe provider failure diagnostics if it does not verify.
+- [ ] Complete real name/ID consistency integration testing and disable Mock in production.
+- [ ] Complete security/privacy compliance review.
+- [ ] Reinitialize the database, apply migrations/generate Prisma Client, and run local verification for the full flow.
+
 ## Immediate (2026-06-26)
 
 - [x] 获取百度文心 Secret Key，补充 `.env` 配置 → **已确认：新版 bce-v3 key 本身就是 Bearer Token，无需 Secret Key**
@@ -30,3 +39,14 @@
 - Add project-specific deployment notes.
 - Add environment variable documentation based on the final deployment target.
 - Document the `.env` setup flow in README or project docs (note: `.env` is gitignored).
+
+## Real-name verification follow-up
+
+- [ ] Apply migration 20260716090000_add_identity_verification_attempts.
+- [ ] Manually validate results 1, 2, SYSTEM_042, service failure, and rate limiting in deployment.
+- [ ] Run parser tests and Docker build in deployment; Codex made no real provider call.
+
+## Local identity validation follow-up
+
+- [ ] Rebuild deployment and verify a valid local ID passes validation and reaches the configured provider.
+- [ ] Verify invalid format, date, and checksum values remain blocked locally without a provider call.
