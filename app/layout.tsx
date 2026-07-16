@@ -7,12 +7,13 @@ import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import { getServerSideConfig } from "./config/server";
+import { PRODUCT_BRAND_NAME } from "./constant";
 
 export const metadata: Metadata = {
-  title: "星跃 Chat",
+  title: PRODUCT_BRAND_NAME,
   description: "安全、合规的智能问答服务",
   appleWebApp: {
-    title: "星跃 Chat",
+    title: PRODUCT_BRAND_NAME,
     statusBarStyle: "default",
   },
 };

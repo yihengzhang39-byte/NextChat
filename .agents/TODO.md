@@ -1,5 +1,11 @@
 # TODO
 
+## Mock age-profile follow-up (2026-07-16)
+
+- [ ] In a non-production local environment only, manually verify the configured Mock adult and minor profiles, including the common Shanghai birthday calculation and underage logout flow.
+- [ ] Confirm that production, Aliyun Market, formal SMS, filing-test login, invalid Mock configuration, and non-placeholder identity input continue to use strict normal validation.
+- [ ] Confirm placeholder verification stores no identity ciphertext, HMAC, last-four, real-name verification timestamp, or provider request ID.
+
 ## Adult access follow-up (2026-07-16)
 
 - [ ] Apply `20260716130000_add_adult_chat_access` after existing Prisma migrations and run Prisma Client generation locally.

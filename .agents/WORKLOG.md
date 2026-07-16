@@ -3,6 +3,24 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-16 - Real-name return-to-login action
+
+- Added the real-name page’s top-left “返回” button using the filing-test login page’s existing `auth-return` visual style.
+- It now shares the frontend logout flow with sidebar and underage handling: invalidate the Session/Cookie through `/api/auth/logout`, clear account-scoped chat state, then replace-route to `/#/auth`; the shared lock prevents duplicate requests and redirects.
+- Real-name verification, age checks, database, filing login, chat permissions, Docker, browser verification, tests, builds, and real interfaces were not changed or run.
+
+## 2026-07-16 - Brand title update
+
+- Updated the login page and chat sidebar brand title from “星跃 Chat” to “星跃多模态大模型”; metadata, PWA name, and the related real-name page reference now use the same product-brand constant where possible.
+- Added compact responsive title sizing and no-wrap safeguards for the longer login and sidebar titles. Login, identity, age restriction, chat, and model interfaces were not changed.
+- No Docker, browser verification, or real interface request was run.
+
+## 2026-07-16 - Local Mock minor-flow configuration
+
+- Added server-only `IDENTITY_VERIFY_MOCK_AGE_PROFILE`, `IDENTITY_VERIFY_MOCK_BIRTH_DATE`, and `IDENTITY_VERIFY_MOCK_TEST_ID_NUMBER` support, including Docker environment pass-through and blank documented template entries.
+- The development-only placeholder is accepted solely by the strict Mock/success/non-production gate. Its age goes through the shared Shanghai age function; placeholder identity data is never encrypted, HMACed, stored as last-four, or bound uniquely.
+- Added unexecuted coverage for the local gate and production rejection. No test, build, Docker, database, or external request was run.
+
 ## 2026-07-16 - Adult-only chat access and filing-test account seed
 
 - Added age/source fields, shared Shanghai calendar-age calculation, automatic server-side minor-to-adult promotion, and a migration `20260716130000_add_adult_chat_access`.

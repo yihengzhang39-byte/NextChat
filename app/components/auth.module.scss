@@ -136,11 +136,13 @@
 
   .auth-title {
     margin: 8px 0 14px;
+    max-width: 100%;
     color: var(--black);
-    font-size: 46px;
+    font-size: clamp(30px, 5vw, 46px);
     font-weight: 800;
-    line-height: 1.08;
+    line-height: 1.15;
     letter-spacing: 0;
+    white-space: nowrap;
   }
 
   .auth-tips {
@@ -411,7 +413,7 @@
     }
 
     .auth-title {
-      font-size: 34px;
+      font-size: clamp(30px, 8vw, 34px);
     }
 
     .auth-tips {

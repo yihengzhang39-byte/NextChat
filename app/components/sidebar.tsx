@@ -23,6 +23,7 @@ import {
   MIN_SIDEBAR_WIDTH,
   NARROW_SIDEBAR_WIDTH,
   Path,
+  PRODUCT_BRAND_NAME,
   REPO_URL,
 } from "../constant";
 
@@ -32,6 +33,7 @@ import dynamic from "next/dynamic";
 import { Selector, showConfirm } from "./ui-lib";
 import clsx from "clsx";
 import { isMcpEnabled } from "../mcp/actions";
+import { logoutAndRedirect } from "./auth-logout";
 
 const DISCOVERY = [
   { name: "意见反馈", path: Path.Feedback },
@@ -251,7 +253,7 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="星跃 Chat"
+        title={PRODUCT_BRAND_NAME}
         subTitle="安全、合规的智能问答服务"
         shouldNarrow={shouldNarrow}
       >
@@ -339,12 +341,7 @@ export function SideBar(props: { className?: string }) {
                 icon={<ReturnIcon />}
                 shadow
                 onClick={async () => {
-                  try {
-                    await fetch("/api/auth/logout", { method: "POST" });
-                  } finally {
-                    chatStore.resetForLogout();
-                    navigate(Path.Auth);
-                  }
+                  await logoutAndRedirect(navigate);
                 }}
               />
             </div>

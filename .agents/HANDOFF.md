@@ -1,5 +1,12 @@
 # Handoff
 
+## 2026-07-16 - Mock age-profile flow
+
+- For local Mock testing only, set `IDENTITY_VERIFY_PROVIDER=mock`, `IDENTITY_VERIFY_MOCK_MODE=success`, a matching `IDENTITY_VERIFY_MOCK_AGE_PROFILE`, a valid `IDENTITY_VERIFY_MOCK_BIRTH_DATE`, and a server-only test placeholder value. The placeholder is not an ID number and is rejected outside this exact non-production gate.
+- The birth date is passed to the same Shanghai calendar-age helper used by normal verification. A profile/date mismatch falls back to normal strict ID validation instead of forcing access.
+- The placeholder path records `MOCK` plus age state/timestamps only; it persists no ciphertext, HMAC, last-four, real-name verification time, or provider request ID. It neither changes Aliyun, formal SMS, nor filing-test behavior.
+- No test, build, Docker, Prisma/database operation, or real identity request was run. Manually verify the adult/minor profiles, production rejection, repeated-login restriction, and that status responses expose no test birth date or placeholder.
+
 ## 2026-07-16 - Adult access restriction
 
 - Apply `20260716130000_add_adult_chat_access` after the preceding identity migrations. It adds `AgeVerificationStatus`, `IdentityVerificationSource`, `displayName`, age timestamps, backfills all existing `realNameStatus=VERIFIED` users to `ADULT`, and upserts the ten filing-test accounts.

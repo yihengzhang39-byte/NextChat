@@ -77,3 +77,39 @@ test("uses Shanghai calendar 18th birthdays, including the Feb 29 rule", () => {
   expect(resolveAgeVerification(makeId("20080720"), new Date("2026-07-19T15:59:59.999Z")).ageVerificationStatus).toBe("MINOR");
   expect(resolveAgeVerification(makeId("20080720"), new Date("2026-07-19T16:00:00.000Z")).ageVerificationStatus).toBe("ADULT");
 });
+
+test("allows the mock placeholder only for the configured local mock profile", () => {
+  const keys = [
+    "NODE_ENV",
+    "IDENTITY_VERIFY_PROVIDER",
+    "IDENTITY_VERIFY_MOCK_MODE",
+    "IDENTITY_VERIFY_MOCK_AGE_PROFILE",
+    "IDENTITY_VERIFY_MOCK_BIRTH_DATE",
+    "IDENTITY_VERIFY_MOCK_TEST_ID_NUMBER",
+  ] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  try {
+    Object.assign(process.env, {
+      NODE_ENV: "test",
+      IDENTITY_VERIFY_PROVIDER: "mock",
+      IDENTITY_VERIFY_MOCK_MODE: "success",
+      IDENTITY_VERIFY_MOCK_AGE_PROFILE: "minor",
+      IDENTITY_VERIFY_MOCK_BIRTH_DATE: "2999-01-01",
+      IDENTITY_VERIFY_MOCK_TEST_ID_NUMBER: "111111111111111111",
+    });
+    expect(validateIdentityInput({ realName: "测试用户", idNumber: "111111111111111111" })).toMatchObject({
+      success: true,
+      mockAge: { ageVerificationStatus: "MINOR" },
+    });
+    process.env.NODE_ENV = "production";
+    expect(validateIdentityInput({ realName: "测试用户", idNumber: "111111111111111111" })).toMatchObject({
+      success: false,
+      error: "invalid_id_number",
+    });
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});

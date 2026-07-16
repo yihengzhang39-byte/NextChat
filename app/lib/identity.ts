@@ -13,7 +13,7 @@ export type IdentityVerificationSource =
 
 export type IdentityInputValidationResult =
   | { success: false; error: "invalid_real_name" | "invalid_id_number" }
-  | { success: true; realName: string; idNumber: string };
+  | { success: true; realName: string; idNumber: string; mockAge?: MockAgeVerification };
 
 type IdentityRecord = {
   realNameStatus: RealNameStatus;
@@ -30,6 +30,11 @@ type IdentityRecord = {
 
 export type BirthDate = { year: number; month: number; day: number };
 
+export type MockAgeVerification = {
+  ageVerificationStatus: "ADULT" | "MINOR";
+  adultEligibleAt: Date;
+};
+
 export type UserChatAccess = {
   identityVerificationStatus: RealNameStatus;
   ageVerificationStatus: AgeVerificationStatus;
@@ -39,6 +44,7 @@ export type UserChatAccess = {
 };
 
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
+const MOCK_TEST_ID_NUMBER = "111111111111111111";
 
 function identityConfigError() {
   return new Error("identity_config_error");
@@ -164,6 +170,17 @@ function daysInMonth(year: number, month: number) {
   ] ?? 0;
 }
 
+function parseBirthDate(value: string): BirthDate | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return year >= 1900 && month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month)
+    ? { year, month, day }
+    : null;
+}
+
 export function parseIdBirthDate(idNumber: string): BirthDate | null {
   if (!/^[0-9]{17}[0-9X]$/.test(idNumber)) return null;
   const year = Number(idNumber.slice(6, 10));
@@ -198,14 +215,38 @@ export function getAdultEligibleAt(birthDate: BirthDate) {
   return new Date(Date.UTC(year, birthDate.month - 1, day) - SHANGHAI_OFFSET_MS);
 }
 
-export function resolveAgeVerification(idNumber: string, now = new Date()) {
-  const birthDate = parseIdBirthDate(idNumber);
-  if (!birthDate) throw new Error("invalid_id_number");
+export function resolveAgeVerificationFromBirthDate(birthDate: BirthDate, now = new Date()): MockAgeVerification {
   const adultEligibleAt = getAdultEligibleAt(birthDate);
   return {
     adultEligibleAt,
     ageVerificationStatus: now >= adultEligibleAt ? "ADULT" as const : "MINOR" as const,
   };
+}
+
+export function resolveAgeVerification(idNumber: string, now = new Date()) {
+  const birthDate = parseIdBirthDate(idNumber);
+  if (!birthDate) throw new Error("invalid_id_number");
+  return resolveAgeVerificationFromBirthDate(birthDate, now);
+}
+
+function getMockAgeVerification(value: unknown): MockAgeVerification | null {
+  const profile = process.env.IDENTITY_VERIFY_MOCK_AGE_PROFILE;
+  const configuredIdNumber = process.env.IDENTITY_VERIFY_MOCK_TEST_ID_NUMBER;
+  if (
+    process.env.NODE_ENV === "production" ||
+    process.env.IDENTITY_VERIFY_PROVIDER !== "mock" ||
+    process.env.IDENTITY_VERIFY_MOCK_MODE !== "success" ||
+    (profile !== "adult" && profile !== "minor") ||
+    configuredIdNumber !== MOCK_TEST_ID_NUMBER ||
+    typeof value !== "string" ||
+    value !== configuredIdNumber
+  ) {
+    return null;
+  }
+  const birthDate = parseBirthDate(process.env.IDENTITY_VERIFY_MOCK_BIRTH_DATE ?? "");
+  if (!birthDate) return null;
+  const age = resolveAgeVerificationFromBirthDate(birthDate);
+  return age.ageVerificationStatus === profile.toUpperCase() ? age : null;
 }
 
 function logIdentityValidation(result: IdNumberValidationResult) {
@@ -228,6 +269,10 @@ export function validateIdentityInput(
   const realName = String(input.realName ?? "").trim();
   if (realName.length < 2 || realName.length > 50 || /[ -]/.test(realName)) {
     return { success: false, error: "invalid_real_name" };
+  }
+  const mockAge = getMockAgeVerification(input.idNumber);
+  if (mockAge) {
+    return { success: true, realName, idNumber: String(input.idNumber), mockAge };
   }
   const idNumber = validateIdNumber(input.idNumber);
   if (!idNumber.success) {
@@ -375,7 +420,24 @@ export async function completeIdentityVerification(input: {
   idNumber: string;
   provider: string;
   requestId?: string;
+  mockAge?: MockAgeVerification;
 }) {
+  if (input.mockAge) {
+    await prisma.$executeRaw(Prisma.sql`
+      UPDATE "User"
+      SET "realNameStatus" = 'VERIFIED'::"RealNameStatus",
+        "realNameCiphertext" = NULL, "idNumberCiphertext" = NULL,
+        "idNumberHmac" = NULL, "idNumberLast4" = NULL,
+        "realNameVerifiedAt" = NULL, "realNameVerifyProvider" = 'mock',
+        "realNameVerifyRequestId" = NULL,
+        "ageVerificationStatus" = ${input.mockAge.ageVerificationStatus}::"AgeVerificationStatus",
+        "ageVerifiedAt" = NOW(), "adultEligibleAt" = ${input.mockAge.adultEligibleAt},
+        "identityVerificationSource" = 'MOCK'::"IdentityVerificationSource",
+        "realNameLastFailureReason" = NULL, "updatedAt" = NOW()
+      WHERE "id" = ${input.userId} AND "realNameStatus" = 'VERIFYING'::"RealNameStatus"
+    `);
+    return;
+  }
   const age = resolveAgeVerification(input.idNumber);
   const source: IdentityVerificationSource = input.provider === "aliyun_market" ? "ALIYUN_MARKET" : "MOCK";
   await prisma.$executeRaw(Prisma.sql`

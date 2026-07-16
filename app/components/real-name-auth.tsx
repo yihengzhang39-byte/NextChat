@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
-import { Path } from "../constant";
+import { Path, PRODUCT_BRAND_NAME } from "../constant";
 import { IconButton } from "./button";
 import styles from "./auth.module.scss";
+import { logoutAndRedirect } from "./auth-logout";
 import { handleUnderageRestriction } from "./underage-restriction";
 
 const reasonMessages: Record<string, string> = {
@@ -25,6 +26,7 @@ export function RealNameAuthPage() {
   const [idNumber, setIdNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [message, setMessage] = useState("");
   const canSubmit = useMemo(
     () =>
@@ -65,6 +67,12 @@ export function RealNameAuthPage() {
     }
   }
 
+  async function returnToLogin() {
+    if (leaving) return;
+    setLeaving(true);
+    await logoutAndRedirect(navigate);
+  }
+
   return (
     <div className={clsx(styles["auth-page"], styles["phone-auth-page"])}>
       <div className={styles["phone-auth-shell"]}>
@@ -73,7 +81,7 @@ export function RealNameAuthPage() {
             <div className={styles["phone-auth-kicker"]}>账号安全</div>
             <h1 className={styles["auth-title"]}>实名认证</h1>
             <p className={styles["auth-tips"]}>
-              完成姓名与居民身份证号码核验后，即可进入星跃 Chat。
+              完成姓名与居民身份证号码核验后，即可进入{PRODUCT_BRAND_NAME}。
             </p>
           </div>
           <div className={styles["phone-auth-highlights"]}>
@@ -127,6 +135,12 @@ export function RealNameAuthPage() {
           </div>
         </section>
       </div>
+      <IconButton
+        className={styles["auth-return"]}
+        text="返回"
+        disabled={leaving}
+        onClick={returnToLogin}
+      />
     </div>
   );
 }

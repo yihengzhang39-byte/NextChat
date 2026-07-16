@@ -3,6 +3,12 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-16: Local Mock age-profile test path
+
+- `111111111111111111` is only a non-production Mock test placeholder, never a valid resident ID. It bypasses local ID validation only when the provider is `mock`, Mock mode is `success`, an `adult`/`minor` profile and valid Mock birth date are configured, and the submitted string exactly matches the configured server-only placeholder.
+- Mock age uses the same Shanghai calendar-age helper as real verification. The configured profile must agree with the calculated result, preventing a test configuration from silently forcing an age outcome.
+- Placeholder verification stores only `VERIFIED`, source `MOCK`, age state, `ageVerifiedAt`, and `adultEligibleAt`; it clears identity ciphertext, HMAC, last-four, real-name verification timestamp, and provider request ID. Production and Aliyun paths retain strict ID validation.
+
 ## 2026-07-16: Adult-only chat access after identity verification
 
 - Keep `RealNameStatus` as proof of the two-element result and add independent `AgeVerificationStatus` (`UNKNOWN`, `ADULT`, `MINOR`) for chat eligibility. A verified minor is not an identity-verification failure.

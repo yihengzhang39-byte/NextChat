@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const input = validateIdentityInput(body);
   if (!input.success) return error(input.error, 400);
-  const { realName, idNumber } = input;
+  const { realName, idNumber, mockAge } = input;
 
   const current = await getIdentityRecord(user.id);
   if (current?.realNameStatus === "VERIFIED") return error("already_verified", 409);
@@ -109,6 +109,7 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       provider: result.provider,
       requestId: result.requestId,
+      mockAge,
     });
   } catch (cause: unknown) {
     const databaseCode = (cause as { meta?: { code?: string } })?.meta?.code;

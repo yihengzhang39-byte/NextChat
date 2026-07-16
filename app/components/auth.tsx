@@ -2,7 +2,7 @@ import styles from "./auth.module.scss";
 import { IconButton } from "./button";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Path } from "../constant";
+import { Path, PRODUCT_BRAND_NAME } from "../constant";
 import Locale from "../locales";
 import clsx from "clsx";
 
@@ -80,7 +80,7 @@ export function AuthPage(props: { filingTest?: boolean }) {
         <section className={styles["phone-auth-brand"]}>
           <div>
             <div className={styles["phone-auth-kicker"]}>智能问答工作台</div>
-            <h1 className={styles["auth-title"]}>星跃 Chat</h1>
+            <h1 className={styles["auth-title"]}>{PRODUCT_BRAND_NAME}</h1>
             <p className={styles["auth-tips"]}>
               使用手机号验证码登录，进入安全、合规的智能问答服务。
             </p>
