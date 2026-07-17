@@ -3,7 +3,6 @@ import { IconButton } from "./button";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Path, PRODUCT_BRAND_NAME } from "../constant";
-import Locale from "../locales";
 import clsx from "clsx";
 
 const FILING_TEST_CODE = "123456";
@@ -179,12 +178,13 @@ export function AuthPage(props: { filingTest?: boolean }) {
           </div>
         </section>
       </div>
-
-      <IconButton
-        className={styles["auth-return"]}
-        text={filingTest ? "返回" : Locale.Auth.Return}
-        onClick={() => navigate(filingTest ? Path.Auth : Path.Home)}
-      />
+      {filingTest && (
+        <IconButton
+          className={styles["auth-return"]}
+          text="返回"
+          onClick={() => navigate(Path.Auth)}
+        />
+      )}
     </div>
   );
 }

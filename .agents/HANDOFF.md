@@ -317,3 +317,10 @@ http://localhost:3000
 - Local validation now accepts trimmed valid 18-digit strings and normalizes lowercase x to X. It requires ASCII structure, a valid birth date, and the standard checksum; it does not use a region-code whitelist.
 - Rebuild with docker compose --profile no-proxy up -d --build. Submit a valid identity value and confirm local validation no longer reports invalid_id_number before an aliyun_market provider log appears.
 - Local failure logs show only stage/boolean metadata and length; they never include identity content.
+
+## 2026-07-17 - Correct auth-page return-button scope
+
+- The prior change accidentally removed return controls from all three auth pages. `/#/auth` now alone omits the button, with no hidden control or reserved top-left space.
+- Restored the `/#/auth/filing-test` return button and its existing `Path.Auth` navigation. Its fixed-code flow still avoids the formal SMS send route.
+- Restored the `/#/auth/real-name` return button, `leaving` lock, and `logoutAndRedirect` path: it still invalidates the Session/Cookie, clears chat state, and replace-navigates to `/#/auth`.
+- Restored `auth-return` styles and apply the original mobile spacing only where that control is rendered. No verification command was run per user instruction; manually check the three routes and existing login/verification flows locally.

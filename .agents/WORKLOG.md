@@ -831,3 +831,11 @@ python scripts\batch_eval_iflytek.py `
 - Root cause: the basic format regex in identity.ts contained an accidental literal backtick before the digit class, so valid values failed before date/checksum validation.
 - Replaced it with a string-only validator: trim, lowercase-x normalization, ASCII format, strict UTC date, and GB 11643 checksum. No region whitelist is applied.
 - Added redacted validation-stage logs and generated-fixture unit coverage. No real provider request, Docker, browser, database, migration, or test command was run.
+
+## 2026-07-17 - Correct auth-page return-button scope
+
+- The prior change mistakenly removed the shared phone-auth return control, which also hid the filing-test page button, and removed the real-name page’s dedicated return-to-login action.
+- Corrected the shared page to render its return button only for `/#/auth/filing-test`; `/#/auth` renders no button or placeholder. The filing-test button returns to `/#/auth` without changing its fixed-code or SMS isolation behavior.
+- Restored the real-name page’s return button, `leaving` lock, and `logoutAndRedirect` call. It continues to invalidate the Session/Cookie, clear chat state, and replace-route to `/#/auth`.
+- Restored `auth-return` styling and its mobile spacing only on pages that render the button. Phone/SMS login, filing-test login, real-name submission, age restrictions, chat guards/storage, Iflytek integration, and the “星跃多模态大模型” brand remain unchanged.
+- Per user instruction, no verification command was run; manual local verification is required.
