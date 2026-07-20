@@ -324,3 +324,9 @@ http://localhost:3000
 - Restored the `/#/auth/filing-test` return button and its existing `Path.Auth` navigation. Its fixed-code flow still avoids the formal SMS send route.
 - Restored the `/#/auth/real-name` return button, `leaving` lock, and `logoutAndRedirect` path: it still invalidates the Session/Cookie, clears chat state, and replace-navigates to `/#/auth`.
 - Restored `auth-return` styles and apply the original mobile spacing only where that control is rendered. No verification command was run per user instruction; manually check the three routes and existing login/verification flows locally.
+
+## 2026-07-20 - Iflytek audit-error chat display
+
+- `app/client/platforms/iflytek.ts` now parses confirmed SSE and HTTP JSON error objects in the browser. A structured Iflytek business error writes its extracted user-facing body through the normal assistant-message completion path, so it bypasses the generic JSON code-fence formatter.
+- The extractor starts at the first `非常抱歉`; otherwise it accepts only the structured `服务端业务错误：code=..., message=...` form, then removes an optional anchored final `, sid=...` or `，sid=...`. It preserves audit-text commas, colons, and line breaks.
+- Backend error passthrough and normal successful streaming are unchanged. No test, build, Docker, browser, TypeScript check, or real Iflytek request was run; user local verification is next.

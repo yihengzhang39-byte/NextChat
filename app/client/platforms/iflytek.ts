@@ -28,6 +28,31 @@ import { fetch } from "@/app/utils/stream";
 
 import { RequestPayload } from "./openai";
 
+function extractIflytekUserErrorMessage(error: unknown) {
+  if (
+    !error ||
+    typeof error !== "object" ||
+    typeof (error as { message?: unknown }).message !== "string"
+  ) {
+    return;
+  }
+
+  const message = (error as { message: string }).message;
+  const apologyStart = message.indexOf("非常抱歉");
+  const userMessage =
+    apologyStart >= 0
+      ? message.slice(apologyStart)
+      : message.match(
+          /^服务端业务错误：code=[^,，]+[,，]\s*message=([\s\S]+)$/,
+        )?.[1];
+  const withoutSid = userMessage?.replace(
+    /[,，]\s*sid=[^\s,，]+[\s\r\n]*$/,
+    "",
+  );
+
+  return withoutSid?.trim() ? withoutSid : undefined;
+}
+
 export class SparkApi implements LLMApi {
   private disableListModels = true;
 
@@ -167,6 +192,12 @@ export class SparkApi implements LLMApi {
           }
         };
 
+        const finishWithUserError = (message: string) => {
+          responseText = message;
+          remainText = "";
+          finish();
+        };
+
         const fail = (message: string) => {
           if (finished) return;
           finished = true;
@@ -211,13 +242,18 @@ export class SparkApi implements LLMApi {
               res.status !== 200
             ) {
               let extraInfo = await res.clone().text();
-              try {
-                const resJson = await res.clone().json();
-                extraInfo = prettyObject(resJson);
-              } catch {}
 
               if (res.status === 401) {
                 extraInfo = Locale.Error.Unauthorized;
+              } else {
+                try {
+                  const resJson = JSON.parse(extraInfo);
+                  const userMessage = extractIflytekUserErrorMessage(resJson);
+                  if (userMessage) {
+                    return finishWithUserError(userMessage);
+                  }
+                  extraInfo = prettyObject(resJson);
+                } catch {}
               }
 
               options.onError?.(
@@ -239,6 +275,10 @@ export class SparkApi implements LLMApi {
             try {
               const json = JSON.parse(text);
               if (json?.error) {
+                const userMessage = extractIflytekUserErrorMessage(json);
+                if (userMessage) {
+                  return finishWithUserError(userMessage);
+                }
                 fail(
                   typeof json.message === "string"
                     ? json.message
@@ -292,6 +332,15 @@ export class SparkApi implements LLMApi {
 
         if (!res.ok) {
           const errorText = await res.text();
+          try {
+            const userMessage = extractIflytekUserErrorMessage(
+              JSON.parse(errorText),
+            );
+            if (userMessage) {
+              options.onFinish(userMessage, res);
+              return;
+            }
+          } catch {}
           options.onError?.(
             new Error(`Request failed with status ${res.status}: ${errorText}`),
           );

@@ -839,3 +839,10 @@ python scripts\batch_eval_iflytek.py `
 - Restored the real-name page’s return button, `leaving` lock, and `logoutAndRedirect` call. It continues to invalidate the Session/Cookie, clear chat state, and replace-route to `/#/auth`.
 - Restored `auth-return` styling and its mobile spacing only on pages that render the button. Phone/SMS login, filing-test login, real-name submission, age restrictions, chat guards/storage, Iflytek integration, and the “星跃多模态大模型” brand remain unchanged.
 - Per user instruction, no verification command was run; manual local verification is required.
+
+## 2026-07-20 - Iflytek audit-error chat display
+
+- Fixed the Iflytek business-error JSON being rendered as a black code block: the chat client now extracts the user-facing message from confirmed SSE and HTTP error objects before the generic error formatter runs.
+- For `服务端业务错误` messages, it keeps the text beginning with `非常抱歉` (or the structured `message=` value), removes only a final `sid=...`, and preserves the body’s punctuation and line breaks. Chat users no longer see the technical prefix, code, `message=`, or `sid`.
+- The backend’s complete code/message/sid passthrough and the normal successful streaming response path were not changed.
+- Per user instruction, no test, build, Docker, browser, TypeScript check, or real Iflytek request was run; local verification is pending.
