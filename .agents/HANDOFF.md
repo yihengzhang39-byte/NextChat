@@ -1,5 +1,12 @@
 # Handoff
 
+## 2026-07-21 - Production domain and ICP footer
+
+- Production public address is now `https://iflyfuture.com`; `app/layout.tsx` declares it as `metadataBase` and the canonical URL. No runtime or current deployment configuration used the previous public IP `47.99.218.161`.
+- `app/components/icp-footer.tsx` is reused by `/#/auth`, `/#/auth/filing-test`, and `/#/auth/real-name`. Its `苏ICP备2026049699号-1` link opens `https://beian.miit.gov.cn/` safely in a new tab, and the auth layout keeps it in normal flow at the page bottom.
+- No Nginx or Cookie Domain configuration exists in the repository. `next.config.mjs` now limits `/api` CORS responses to `https://iflyfuture.com` instead of the upstream wildcard. Keep internal Docker/PostgreSQL addresses, development localhost references, relative API paths, `spark-image-api-test.xf-yun.com`, and Aliyun endpoints unchanged.
+- No Docker, build, test, lint, TypeScript, browser, or real third-party call was run. Verify DNS to `47.99.218.161`, ports 80/443, Nginx `server_name`, TLS, HTTP-to-HTTPS redirect, three auth pages/footer link, login/identity, and chat on the domain.
+
 ## 2026-07-16 - Mock age-profile flow
 
 - For local Mock testing only, set `IDENTITY_VERIFY_PROVIDER=mock`, `IDENTITY_VERIFY_MOCK_MODE=success`, a matching `IDENTITY_VERIFY_MOCK_AGE_PROFILE`, a valid `IDENTITY_VERIFY_MOCK_BIRTH_DATE`, and a server-only test placeholder value. The placeholder is not an ID number and is rejected outside this exact non-production gate.

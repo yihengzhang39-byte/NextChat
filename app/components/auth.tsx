@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Path, PRODUCT_BRAND_NAME } from "../constant";
 import clsx from "clsx";
+import { IcpFooter } from "./icp-footer";
 
 const FILING_TEST_CODE = "123456";
 
@@ -178,6 +179,7 @@ export function AuthPage(props: { filingTest?: boolean }) {
           </div>
         </section>
       </div>
+      <IcpFooter />
       {filingTest && (
         <IconButton
           className={styles["auth-return"]}

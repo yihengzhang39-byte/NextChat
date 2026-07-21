@@ -6,6 +6,7 @@ import { IconButton } from "./button";
 import styles from "./auth.module.scss";
 import { logoutAndRedirect } from "./auth-logout";
 import { handleUnderageRestriction } from "./underage-restriction";
+import { IcpFooter } from "./icp-footer";
 
 const reasonMessages: Record<string, string> = {
   invalid_real_name: "请输入正确的真实姓名",
@@ -135,6 +136,7 @@ export function RealNameAuthPage() {
           </div>
         </section>
       </div>
+      <IcpFooter />
       <IconButton
         className={styles["auth-return"]}
         text="返回"

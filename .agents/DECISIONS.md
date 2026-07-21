@@ -3,6 +3,12 @@
 Record decisions that future developers should understand. Prefer short entries
 that explain context, decision, and consequences.
 
+## 2026-07-21: Canonical production domain and shared ICP footer
+
+- Use `https://iflyfuture.com` as the public canonical address and the only configured `/api` CORS origin. Keep browser calls to the app API relative so the same build works behind the configured production domain and in local development.
+- Keep the ICP notice as one shared component on the three authentication routes; do not force it into the full-screen chat layout.
+- Reverse-proxy TLS, `server_name`, DNS, and redirect configuration remain server responsibilities because no such configuration is tracked in this repository. Internal Docker service names, host-only cookies, third-party endpoints, and development localhost addresses must not be rewritten as public URLs.
+
 ## 2026-07-16: Local Mock age-profile test path
 
 - `111111111111111111` is only a non-production Mock test placeholder, never a valid resident ID. It bypasses local ID validation only when the provider is `mock`, Mock mode is `success`, an `adult`/`minor` profile and valid Mock birth date are configured, and the submitted string exactly matches the configured server-only placeholder.

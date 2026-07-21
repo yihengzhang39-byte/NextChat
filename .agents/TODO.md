@@ -1,5 +1,11 @@
 # TODO
 
+## Production domain verification (2026-07-21)
+
+- [ ] Confirm `iflyfuture.com` DNS resolves to `47.99.218.161`, ports 80/443 are open, Nginx uses `server_name iflyfuture.com`, HTTPS is valid, and HTTP redirects to HTTPS.
+- [ ] Open the production formal login, filing-test login, and real-name pages; confirm the bottom `苏ICP备2026049699号-1` link opens the MIIT filing site without obscuring controls on desktop or mobile.
+- [ ] Confirm domain login, real-name verification, and chat work with the existing relative API paths.
+
 ## Mock age-profile follow-up (2026-07-16)
 
 - [ ] In a non-production local environment only, manually verify the configured Mock adult and minor profiles, including the common Shanghai birthday calculation and underage logout flow.

@@ -3,6 +3,13 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-21 - Production domain and ICP footer
+
+- Set the application metadata base and canonical URL to `https://iflyfuture.com`; no running code or current deployment document referenced the former public IP `47.99.218.161`.
+- Added the shared `IcpFooter` to formal phone login, filing-test login, and real-name pages. It links `苏ICP备2026049699号-1` to the MIIT filing site and remains in normal document flow at the bottom of the auth layout.
+- Changed the existing `/api` CORS response origin from the upstream wildcard to `https://iflyfuture.com`. Relative API paths, Docker/PostgreSQL service addresses, `localhost` development references, the Iflytek WebSocket host, and Aliyun service URLs remain unchanged; the repository has no Nginx or Cookie Domain configuration.
+- Per instruction, no Docker, build, test, lint, TypeScript, browser, SMS, identity, or Iflytek command was run. Static source review only; server DNS, TLS, redirect, and live-page checks remain user work.
+
 ## 2026-07-16 - Real-name return-to-login action
 
 - Added the real-name page’s top-left “返回” button using the filing-test login page’s existing `auth-return` visual style.

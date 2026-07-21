@@ -2,6 +2,18 @@
 
 This fork is intended to run with Docker Compose and PostgreSQL.
 
+## Public Site Address
+
+The production public URL is `https://iflyfuture.com`. The application
+metadata uses this canonical address; browser API calls remain relative to the
+current origin.
+
+This repository does not contain Nginx or other reverse-proxy configuration.
+On the server, point DNS at `47.99.218.161`, configure `server_name
+iflyfuture.com`, install the HTTPS certificate, and redirect HTTP to HTTPS.
+Keep any upstream `proxy_pass` target pointed at the local/container app
+service rather than this public domain.
+
 ## Required Environment
 
 Copy `.env.template` to `.env` and set production values:

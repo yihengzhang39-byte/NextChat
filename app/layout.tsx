@@ -10,8 +10,12 @@ import { getServerSideConfig } from "./config/server";
 import { PRODUCT_BRAND_NAME } from "./constant";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://iflyfuture.com"),
   title: PRODUCT_BRAND_NAME,
   description: "安全、合规的智能问答服务",
+  alternates: {
+    canonical: "/",
+  },
   appleWebApp: {
     title: PRODUCT_BRAND_NAME,
     statusBarStyle: "default",
