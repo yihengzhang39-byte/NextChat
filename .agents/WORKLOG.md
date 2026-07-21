@@ -846,3 +846,8 @@ python scripts\batch_eval_iflytek.py `
 - For `服务端业务错误` messages, it keeps the text beginning with `非常抱歉` (or the structured `message=` value), removes only a final `sid=...`, and preserves the body’s punctuation and line breaks. Chat users no longer see the technical prefix, code, `message=`, or `sid`.
 - The backend’s complete code/message/sid passthrough and the normal successful streaming response path were not changed.
 - Per user instruction, no test, build, Docker, browser, TypeScript check, or real Iflytek request was run; local verification is pending.
+
+## 2026-07-21 - Chat input toolbar buttons
+
+- Removed the magic-wand prompt button and adjacent mask/assistant button from the chat input toolbar. Other input toolbar functions are unchanged.
+- Frontend only; no test, build, Docker, or real interface request was run per instruction.
