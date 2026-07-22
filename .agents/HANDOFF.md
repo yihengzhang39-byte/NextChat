@@ -1,5 +1,11 @@
 # Handoff
 
+## 2026-07-22 - ICP footer static text
+
+- `app/components/icp-footer.tsx` now renders `苏ICP备2026049699号-1` as static text with no link, target, rel, route navigation, or click behavior; clicking it does not navigate.
+- The formal phone login, filing-test login, and real-name pages continue to reuse this shared `IcpFooter`. Login, identity verification, agreement/privacy links, domain, and HTTPS behavior were not changed.
+- Per instruction, no test, build, lint, TypeScript, Docker, project startup, or browser verification was run.
+
 ## 2026-07-21 - Production domain and ICP footer
 
 - Production public address is now `https://iflyfuture.com`; `app/layout.tsx` declares it as `metadataBase` and the canonical URL. No runtime or current deployment configuration used the previous public IP `47.99.218.161`.

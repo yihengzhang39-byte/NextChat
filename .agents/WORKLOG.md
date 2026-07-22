@@ -3,6 +3,12 @@
 Use this file to record meaningful project progress. Keep entries concise and
 use concrete dates.
 
+## 2026-07-22 - ICP footer static text
+
+- Changed the shared `IcpFooter` notice from a MIIT hyperlink to the unchanged static text `苏ICP备2026049699号-1`; clicking it no longer navigates.
+- Formal phone login, filing-test login, and real-name pages continue to reuse `IcpFooter`. Login, identity verification, agreement/privacy links, domain, and HTTPS behavior were not changed.
+- Per instruction, no test, build, lint, TypeScript, Docker, project startup, or browser verification was run.
+
 ## 2026-07-21 - Production domain and ICP footer
 
 - Set the application metadata base and canonical URL to `https://iflyfuture.com`; no running code or current deployment document referenced the former public IP `47.99.218.161`.
