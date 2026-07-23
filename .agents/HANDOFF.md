@@ -343,3 +343,11 @@ http://localhost:3000
 - `app/client/platforms/iflytek.ts` now parses confirmed SSE and HTTP JSON error objects in the browser. A structured Iflytek business error writes its extracted user-facing body through the normal assistant-message completion path, so it bypasses the generic JSON code-fence formatter.
 - The extractor starts at the first `非常抱歉`; otherwise it accepts only the structured `服务端业务错误：code=..., message=...` form, then removes an optional anchored final `, sid=...` or `，sid=...`. It preserves audit-text commas, colons, and line breaks.
 - Backend error passthrough and normal successful streaming are unchanged. No test, build, Docker, browser, TypeScript check, or real Iflytek request was run; user local verification is next.
+
+## 2026-07-23 - Settings-only realtime chat, TTS, and NextChat AI hiding
+
+- `app/components/settings.tsx` no longer renders the `RealtimeConfigList` or `TTSConfigList` wrapper lists, so their complete settings areas are absent with no empty card, border, divider, or reserved spacing.
+- The same settings page no longer renders `saasStartComponent`, the NextChat AI promotion card. Its enclosing list is now rendered only for the separately retained access-code setting, so the promotion cannot leave an empty container.
+- Realtime chat and TTS configuration/state, components, and runtime logic remain intact; this is only a settings-page rendering change.
+- NextChat AI interfaces and underlying functionality remain intact; only the settings-page promotion entry is removed.
+- Per user instruction, no test, lint, build, TypeScript check, Docker action, project startup, or browser verification was run.

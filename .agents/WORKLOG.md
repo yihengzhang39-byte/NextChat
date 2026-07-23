@@ -864,3 +864,11 @@ python scripts\batch_eval_iflytek.py `
 
 - Removed the magic-wand prompt button and adjacent mask/assistant button from the chat input toolbar. Other input toolbar functions are unchanged.
 - Frontend only; no test, build, Docker, or real interface request was run per instruction.
+
+## 2026-07-23 - Hide realtime chat, text-to-speech, and NextChat AI settings
+
+- Removed the settings-page rendering of the standalone `RealtimeConfigList` and `TTSConfigList` containers. This hides the complete realtime chat and text-to-speech sections without leaving empty cards, borders, dividers, or spacing.
+- Removed the settings-page `saasStartComponent` rendering for the NextChat AI promotion card and its navigation/analytics imports. The access-code list now renders only when the access-code item is enabled, preventing an empty container.
+- Retained all realtime chat and TTS configuration fields, state, components, and chat runtime logic for compatibility and future restoration.
+- Retained NextChat AI interfaces and underlying functionality; only its settings-page promotion entry is removed.
+- Per user instruction, did not run tests, lint, build, TypeScript checks, Docker, project startup, or browser verification.
